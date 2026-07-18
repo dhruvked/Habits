@@ -412,6 +412,11 @@ h1, h2, h3 {
   font-size: 1.1rem;
 }
 
+/* Week selector (hidden by default on desktop) */
+.week-selector-container {
+  display: none;
+}
+
 /* ─── Mobile (≤ 640px) ───────────────────────────────── */
 @media (max-width: 640px) {
   .container { padding: 0 1rem; }
@@ -419,6 +424,50 @@ h1, h2, h3 {
   .site-header { padding: 1rem 0; margin-bottom: 1.25rem; }
   .site-logo { font-size: 1.3rem; }
   .month-nav-label { min-width: 100px; font-size: 0.9rem; }
+
+  .week-selector-container {
+    display: flex;
+    justify-content: space-between;
+    gap: 0.25rem;
+    margin-bottom: 1.25rem;
+    border-bottom: 1.5px solid var(--border);
+    padding-bottom: 0.75rem;
+  }
+
+  .week-selector-btn {
+    background: none;
+    border: none;
+    cursor: pointer;
+    font-family: var(--font-sans);
+    color: var(--muted);
+    font-size: 0.72rem;
+    font-weight: 500;
+    padding: 0.4rem 0.25rem;
+    border-radius: var(--radius);
+    transition: all 0.15s;
+    flex-grow: 1;
+    text-align: center;
+    border: 1px solid transparent;
+  }
+
+  .week-selector-btn:hover {
+    color: var(--ink);
+    background: var(--surface);
+  }
+
+  .week-selector-btn.active {
+    color: var(--cream);
+    background: var(--ink);
+    border-color: var(--ink);
+  }
+
+  .week-range-hint {
+    display: block;
+    font-size: 0.55rem;
+    opacity: 0.7;
+    font-weight: 300;
+    margin-top: 0.05rem;
+  }
 
   .col-habit { width: 100px; }
   .habit-name-text { max-width: 86px; font-size: 0.82rem; }
@@ -428,6 +477,25 @@ h1, h2, h3 {
   .day-dot { width: 8px; height: 8px; }
 
   .tracker-table thead th { font-size: 0.55rem; }
+
+  /* Hide all days on mobile by default */
+  .tracker-table th:not(.col-habit):not(.col-progress),
+  .tracker-table td:not(.col-habit):not(.col-progress) {
+    display: none !important;
+  }
+
+  /* Show only active week days */
+  .show-week-1 .w-1,
+  .show-week-2 .w-2,
+  .show-week-3 .w-3,
+  .show-week-4 .w-4,
+  .show-week-5 .w-5 {
+    display: table-cell !important;
+  }
+
+  .tracker {
+    overflow-x: hidden;
+  }
 
   .progress-cell { font-size: 0.62rem; padding-left: 0.25rem; }
   .col-progress { width: 44px; }

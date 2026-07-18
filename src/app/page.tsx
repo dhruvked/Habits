@@ -49,6 +49,24 @@ export default function HabitTracker() {
   const [editingId, setEditingId]   = useState<number | null>(null);
   const [editingName, setEditingName] = useState("");
   const [dark, setDark]             = useState(false);
+  const [selectedWeek, setSelectedWeek] = useState<number>(1);
+
+  const getWeekForDay = (d: number) => {
+    if (d <= 7) return 1;
+    if (d <= 14) return 2;
+    if (d <= 21) return 3;
+    if (d <= 28) return 4;
+    return 5;
+  };
+
+  useEffect(() => {
+    const d = new Date();
+    if (d.getFullYear() === year && d.getMonth() === month) {
+      setSelectedWeek(getWeekForDay(d.getDate()));
+    } else {
+      setSelectedWeek(1);
+    }
+  }, [year, month]);
 
   const addInputRef  = useRef<HTMLInputElement>(null);
   const editInputRef = useRef<HTMLInputElement>(null);
@@ -169,6 +187,17 @@ export default function HabitTracker() {
     completions.has(`${h.id}:${todayYMD}`)
   ).length;
 
+  const getWeekRangeLabel = (w: number) => {
+    switch (w) {
+      case 1: return "1–7";
+      case 2: return "8–14";
+      case 3: return "15–21";
+      case 4: return "22–28";
+      case 5: return `29–${days}`;
+      default: return "";
+    }
+  };
+
   const isWeekEnd = (day: number) =>
     new Date(year, month, day).getDay() === 0;
 
@@ -209,7 +238,24 @@ export default function HabitTracker() {
           <div className="loading-state">loading your habits…</div>
         ) : (
           <>
-            <div className="tracker">
+            {/* Week navigation (only visible on mobile via CSS) */}
+            <div className="week-selector-container">
+              {Array.from({ length: 5 }, (_, i) => {
+                const w = i + 1;
+                if (w === 5 && days < 29) return null;
+                return (
+                  <button
+                    key={w}
+                    className={`week-selector-btn ${selectedWeek === w ? "active" : ""}`}
+                    onClick={() => setSelectedWeek(w)}
+                  >
+                    W{w} <span className="week-range-hint">({getWeekRangeLabel(w)})</span>
+                  </button>
+                );
+              })}
+            </div>
+
+            <div className={`tracker show-week-${selectedWeek}`}>
               <table className="tracker-table" aria-label="Habit tracker">
                 <thead>
                   <tr>
@@ -218,12 +264,14 @@ export default function HabitTracker() {
                       const day  = i + 1;
                       const ymd  = toYMD(year, month, day);
                       const isToday = ymd === todayYMD;
+                      const weekNum = getWeekForDay(day);
                       return (
                         <th
                           key={day}
                           className={[
                             isWeekEnd(day) ? "week-separator" : "",
                             isToday        ? "today-header"   : "",
+                            `w-${weekNum}`,
                           ].join(" ")}
                           title={`${MONTH_NAMES[month]} ${day}`}
                         >
@@ -286,11 +334,16 @@ export default function HabitTracker() {
                           const done     = completions.has(`${habit.id}:${ymd}`);
                           const isFuture = ymd > todayYMD;
                           const isToday  = ymd === todayYMD;
+                          const weekNum  = getWeekForDay(day);
 
                           return (
                             <td
                               key={day}
-                              className={`day-cell${isWeekEnd(day) ? " week-separator" : ""}`}
+                              className={[
+                                "day-cell",
+                                isWeekEnd(day) ? "week-separator" : "",
+                                `w-${weekNum}`,
+                              ].join(" ")}
                             >
                               <button
                                 className={[
