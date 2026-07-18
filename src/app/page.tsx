@@ -11,7 +11,7 @@ interface Habit {
 
 interface Completion {
   habit_id: number;
-  date: string; // "YYYY-MM-DD"
+  date: string;
 }
 
 /* ─── Helpers ─────────────────────────────────────────── */
@@ -24,12 +24,14 @@ function daysInMonth(year: number, month: number) {
 }
 
 function dayLabel(year: number, month: number, day: number) {
-  return new Date(year, month, day).toLocaleDateString("en", { weekday: "short" }).slice(0, 2);
+  return new Date(year, month, day)
+    .toLocaleDateString("en", { weekday: "short" })
+    .slice(0, 2);
 }
 
 const MONTH_NAMES = [
   "January","February","March","April","May","June",
-  "July","August","September","October","November","December"
+  "July","August","September","October","November","December",
 ];
 
 /* ─── Component ───────────────────────────────────────── */
@@ -37,25 +39,38 @@ export default function HabitTracker() {
   const today = new Date();
   const todayYMD = toYMD(today.getFullYear(), today.getMonth(), today.getDate());
 
-  const [year, setYear] = useState(today.getFullYear());
-  const [month, setMonth] = useState(today.getMonth());
-  const [habits, setHabits] = useState<Habit[]>([]);
+  const [year, setYear]             = useState(today.getFullYear());
+  const [month, setMonth]           = useState(today.getMonth());
+  const [habits, setHabits]         = useState<Habit[]>([]);
   const [completions, setCompletions] = useState<Set<string>>(new Set());
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading]       = useState(true);
   const [addingHabit, setAddingHabit] = useState(false);
   const [newHabitName, setNewHabitName] = useState("");
-  const [editingId, setEditingId] = useState<number | null>(null);
+  const [editingId, setEditingId]   = useState<number | null>(null);
   const [editingName, setEditingName] = useState("");
-  const addInputRef = useRef<HTMLInputElement>(null);
+  const [dark, setDark]             = useState(false);
+
+  const addInputRef  = useRef<HTMLInputElement>(null);
   const editInputRef = useRef<HTMLInputElement>(null);
 
-  const days = daysInMonth(year, month);
+  const days     = daysInMonth(year, month);
   const monthKey = `${year}-${String(month + 1).padStart(2, "0")}`;
 
-  /* ── Init DB on first load ── */
+  /* ── Dark mode — read saved preference ── */
   useEffect(() => {
-    fetch("/api/init-db").catch(() => {});
+    const saved = localStorage.getItem("habits-theme");
+    if (saved === "dark") setDark(true);
+    else if (!saved && window.matchMedia("(prefers-color-scheme: dark)").matches)
+      setDark(true);
   }, []);
+
+  useEffect(() => {
+    document.documentElement.setAttribute("data-theme", dark ? "dark" : "light");
+    localStorage.setItem("habits-theme", dark ? "dark" : "light");
+  }, [dark]);
+
+  /* ── Init DB ── */
+  useEffect(() => { fetch("/api/init-db").catch(() => {}); }, []);
 
   /* ── Fetch habits ── */
   const fetchHabits = useCallback(async () => {
@@ -63,7 +78,7 @@ export default function HabitTracker() {
     setHabits(await res.json());
   }, []);
 
-  /* ── Fetch completions for current month ── */
+  /* ── Fetch completions ── */
   const fetchCompletions = useCallback(async () => {
     const res = await fetch(`/api/completions?month=${monthKey}`);
     const data: Completion[] = await res.json();
@@ -77,22 +92,16 @@ export default function HabitTracker() {
     );
   }, [fetchHabits, fetchCompletions]);
 
-  /* ── Focus add input when shown ── */
-  useEffect(() => {
-    if (addingHabit) addInputRef.current?.focus();
-  }, [addingHabit]);
-
-  useEffect(() => {
-    if (editingId !== null) editInputRef.current?.focus();
-  }, [editingId]);
+  /* ── Focus helpers ── */
+  useEffect(() => { if (addingHabit)    addInputRef.current?.focus();  }, [addingHabit]);
+  useEffect(() => { if (editingId !== null) editInputRef.current?.focus(); }, [editingId]);
 
   /* ── Toggle completion ── */
   const toggleDay = async (habitId: number, day: number) => {
-    const date = toYMD(year, month, day);
-    const key = `${habitId}:${date}`;
+    const date      = toYMD(year, month, day);
+    const key       = `${habitId}:${date}`;
     const completed = !completions.has(key);
 
-    // Optimistic update
     setCompletions((prev) => {
       const next = new Set(prev);
       if (completed) next.add(key); else next.delete(key);
@@ -110,7 +119,7 @@ export default function HabitTracker() {
   const submitAddHabit = async () => {
     const name = newHabitName.trim();
     if (!name) { setAddingHabit(false); return; }
-    const res = await fetch("/api/habits", {
+    const res   = await fetch("/api/habits", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ name }),
@@ -142,70 +151,85 @@ export default function HabitTracker() {
 
   /* ── Month navigation ── */
   const prevMonth = () => {
-    if (month === 0) { setYear(y => y - 1); setMonth(11); }
-    else setMonth(m => m - 1);
+    if (month === 0) { setYear((y) => y - 1); setMonth(11); }
+    else setMonth((m) => m - 1);
   };
   const nextMonth = () => {
-    if (month === 11) { setYear(y => y + 1); setMonth(0); }
-    else setMonth(m => m + 1);
+    if (month === 11) { setYear((y) => y + 1); setMonth(0); }
+    else setMonth((m) => m + 1);
   };
 
   /* ── Stats ── */
   const totalPossible = habits.length * days;
-  const totalDone = completions.size;
-  const pct = totalPossible > 0 ? Math.round((totalDone / totalPossible) * 100) : 0;
-  const todayDone = habits.filter((h) => completions.has(`${h.id}:${todayYMD}`)).length;
+  const totalDone     = completions.size;
+  const pct           = totalPossible > 0
+    ? Math.round((totalDone / totalPossible) * 100)
+    : 0;
+  const todayDone = habits.filter((h) =>
+    completions.has(`${h.id}:${todayYMD}`)
+  ).length;
 
-  /* ── Week separator helper ── */
-  const isWeekEnd = (day: number) => {
-    const dow = new Date(year, month, day).getDay();
-    return dow === 0; // Sunday
-  };
+  const isWeekEnd = (day: number) =>
+    new Date(year, month, day).getDay() === 0;
 
   return (
     <div>
-      {/* Header */}
+      {/* ── Header ── */}
       <header className="site-header">
         <div className="container">
           <div className="site-header-inner">
             <span className="site-logo">habits.</span>
 
-            {/* Month Nav */}
-            <nav className="month-nav" aria-label="Month navigation">
-              <button className="nav-btn" onClick={prevMonth} aria-label="Previous month">←</button>
-              <span className="month-nav-label">
-                {MONTH_NAMES[month]} {year}
-              </span>
-              <button className="nav-btn" onClick={nextMonth} aria-label="Next month">→</button>
-            </nav>
+            <div className="header-controls">
+              {/* Month nav */}
+              <nav className="month-nav" aria-label="Month navigation">
+                <button className="nav-btn" onClick={prevMonth} aria-label="Previous month">←</button>
+                <span className="month-nav-label">{MONTH_NAMES[month]} {year}</span>
+                <button className="nav-btn" onClick={nextMonth} aria-label="Next month">→</button>
+              </nav>
+
+              {/* Dark mode toggle */}
+              <button
+                className="theme-btn"
+                onClick={() => setDark((d) => !d)}
+                aria-label={dark ? "Switch to light mode" : "Switch to dark mode"}
+                title={dark ? "Light mode" : "Dark mode"}
+                id="theme-toggle"
+              >
+                {dark ? "☀︎" : "☽"}
+              </button>
+            </div>
           </div>
         </div>
       </header>
 
+      {/* ── Main ── */}
       <main className="container">
         {loading ? (
           <div className="loading-state">loading your habits…</div>
         ) : (
           <>
-            {/* Tracker */}
             <div className="tracker">
               <table className="tracker-table" aria-label="Habit tracker">
                 <thead>
                   <tr>
                     <th className="col-habit">Habit</th>
                     {Array.from({ length: days }, (_, i) => {
-                      const day = i + 1;
-                      const ymd = toYMD(year, month, day);
+                      const day  = i + 1;
+                      const ymd  = toYMD(year, month, day);
                       const isToday = ymd === todayYMD;
                       return (
                         <th
                           key={day}
-                          className={`${isWeekEnd(day) ? "week-separator" : ""} ${isToday ? "today-header" : ""}`}
+                          className={[
+                            isWeekEnd(day) ? "week-separator" : "",
+                            isToday        ? "today-header"   : "",
+                          ].join(" ")}
                           title={`${MONTH_NAMES[month]} ${day}`}
                         >
                           {day}
                           <br />
-                          <span style={{ fontSize: "0.55rem", opacity: 0.7 }}>
+                          <span style={{ fontSize: "0.52rem", opacity: 0.65 }}>
                             {dayLabel(year, month, day)}
                           </span>
                         </th>
@@ -223,8 +247,8 @@ export default function HabitTracker() {
 
                     return (
                       <tr key={habit.id}>
-                        {/* Habit Name */}
-                        <td className="habit-name-cell">
+                        {/* Habit name — sticky */}
+                        <td className="habit-name-cell col-habit">
                           {editingId === habit.id ? (
                             <input
                               ref={editInputRef}
@@ -233,17 +257,14 @@ export default function HabitTracker() {
                               onChange={(e) => setEditingName(e.target.value)}
                               onBlur={() => submitRename(habit.id)}
                               onKeyDown={(e) => {
-                                if (e.key === "Enter") submitRename(habit.id);
+                                if (e.key === "Enter")  submitRename(habit.id);
                                 if (e.key === "Escape") setEditingId(null);
                               }}
                             />
                           ) : (
                             <span
                               className="habit-name-text"
-                              onClick={() => {
-                                setEditingId(habit.id);
-                                setEditingName(habit.name);
-                              }}
+                              onClick={() => { setEditingId(habit.id); setEditingName(habit.name); }}
                               title={`Click to rename: ${habit.name}`}
                             >
                               {habit.name}
@@ -253,7 +274,6 @@ export default function HabitTracker() {
                             className="delete-btn"
                             onClick={() => deleteHabit(habit.id)}
                             aria-label={`Delete ${habit.name}`}
-                            title="Delete habit"
                           >
                             ×
                           </button>
@@ -261,20 +281,27 @@ export default function HabitTracker() {
 
                         {/* Day cells */}
                         {Array.from({ length: days }, (_, i) => {
-                          const day = i + 1;
-                          const ymd = toYMD(year, month, day);
-                          const done = completions.has(`${habit.id}:${ymd}`);
+                          const day      = i + 1;
+                          const ymd      = toYMD(year, month, day);
+                          const done     = completions.has(`${habit.id}:${ymd}`);
                           const isFuture = ymd > todayYMD;
-                          const isToday = ymd === todayYMD;
+                          const isToday  = ymd === todayYMD;
 
                           return (
-                            <td key={day} className={`day-cell ${isWeekEnd(day) ? "week-separator" : ""}`}>
+                            <td
+                              key={day}
+                              className={`day-cell${isWeekEnd(day) ? " week-separator" : ""}`}
+                            >
                               <button
-                                className={`day-cell-btn ${done ? "completed" : ""} ${isFuture ? "future-cell" : ""} ${isToday ? "today-cell" : ""}`}
+                                className={[
+                                  "day-cell-btn",
+                                  done      ? "completed"   : "",
+                                  isFuture  ? "future-cell" : "",
+                                  isToday   ? "today-cell"  : "",
+                                ].join(" ")}
                                 onClick={() => !isFuture && toggleDay(habit.id, day)}
-                                aria-label={`${habit.name} on ${MONTH_NAMES[month]} ${day}: ${done ? "done" : "not done"}`}
+                                aria-label={`${habit.name} — ${MONTH_NAMES[month]} ${day}: ${done ? "done" : "not done"}`}
                                 aria-pressed={done}
-                                disabled={isFuture}
                               >
                                 <span className="day-dot" />
                               </button>
@@ -283,16 +310,12 @@ export default function HabitTracker() {
                         })}
 
                         {/* Progress */}
-                        <td className="progress-cell">
-                          <span className="progress-fraction">
-                            {habitDone}/{days}
-                          </span>
-                        </td>
+                        <td className="progress-cell">{habitDone}/{days}</td>
                       </tr>
                     );
                   })}
 
-                  {/* Add habit input row */}
+                  {/* Add habit — input row */}
                   {addingHabit && (
                     <tr className="add-habit-input-row">
                       <td colSpan={days + 2}>
@@ -304,18 +327,15 @@ export default function HabitTracker() {
                           onChange={(e) => setNewHabitName(e.target.value)}
                           onBlur={submitAddHabit}
                           onKeyDown={(e) => {
-                            if (e.key === "Enter") submitAddHabit();
-                            if (e.key === "Escape") {
-                              setAddingHabit(false);
-                              setNewHabitName("");
-                            }
+                            if (e.key === "Enter")  submitAddHabit();
+                            if (e.key === "Escape") { setAddingHabit(false); setNewHabitName(""); }
                           }}
                         />
                       </td>
                     </tr>
                   )}
 
-                  {/* Add habit button row */}
+                  {/* Add habit — button row */}
                   {!addingHabit && (
                     <tr className="add-habit-row">
                       <td colSpan={days + 2}>
@@ -334,7 +354,7 @@ export default function HabitTracker() {
               </table>
             </div>
 
-            {/* Stats footer */}
+            {/* ── Stats ── */}
             {habits.length > 0 && (
               <div className="stats-row" role="complementary" aria-label="Monthly statistics">
                 <div className="stat-item">
