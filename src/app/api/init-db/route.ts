@@ -14,6 +14,10 @@ export async function GET() {
   // Migration: Add new columns if they do not exist
   await sql`ALTER TABLE habits ADD COLUMN IF NOT EXISTS description TEXT DEFAULT ''`;
   await sql`ALTER TABLE habits ADD COLUMN IF NOT EXISTS goal_value INTEGER DEFAULT 0`;
+  await sql`ALTER TABLE habits ADD COLUMN IF NOT EXISTS month VARCHAR(7)`;
+
+  // Backfill existing habits without a month with current month
+  await sql`UPDATE habits SET month = '2026-07' WHERE month IS NULL`;
 
   await sql`
     CREATE TABLE IF NOT EXISTS completions (

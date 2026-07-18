@@ -145,30 +145,48 @@ h1, h2, h3 {
   border-color: var(--ink);
 }
 
-/* ─── Tracker wrapper ────────────────────────────────── */
 .tracker {
   width: 100%;
   overflow-x: auto;
   -webkit-overflow-scrolling: touch;
-  scrollbar-width: none; /* Firefox */
+  scrollbar-width: none; /* Hide default on Firefox */
+  transition: scrollbar-color 0.2s;
 }
+
 .tracker::-webkit-scrollbar {
-  display: none; /* Chrome, Safari, Opera */
+  height: 4px;
+  background: transparent;
+}
+
+.tracker::-webkit-scrollbar-thumb {
+  background: transparent;
+  border-radius: 2px;
+  transition: background 0.2s;
+}
+
+/* Reveal thin scrollbar on hover */
+.tracker:hover {
+  scrollbar-width: thin; /* Firefox */
+}
+
+.tracker:hover::-webkit-scrollbar-thumb {
+  background: var(--border); /* Chrome/Safari/Webkit */
 }
 
 .tracker-table {
   width: 100%;
-  border-collapse: collapse;
+  border-collapse: separate;
+  border-spacing: 0;
   table-layout: fixed;
-  min-width: 600px; /* prevents collapse on small screens */
+  min-width: 1150px; /* guarantees columns never squish on smaller monitors */
 }
 
 /* ─── Sticky habit name column ───────────────────────── */
 .col-habit {
-  position: sticky;
-  left: 0;
+  position: sticky !important;
+  left: 0 !important;
   background: var(--cream);
-  z-index: 2;
+  z-index: 5 !important;
   transition: background 0.25s;
   width: 130px;
 }
@@ -191,9 +209,16 @@ h1, h2, h3 {
   padding-left: 0;
 }
 
-.tracker-table thead th.col-progress {
+.col-progress {
+  position: sticky !important;
+  right: 0 !important;
+  background: var(--cream);
+  z-index: 5 !important;
+  transition: background 0.25s, color 0.25s;
   width: 56px;
   text-align: right;
+  border-left: 1px solid var(--border);
+  padding-left: 0.5rem !important;
 }
 
 .tracker-table thead th.today-header {
@@ -203,25 +228,25 @@ h1, h2, h3 {
 
 /* Habit rows */
 .tracker-table tbody tr {
-  border-bottom: 1px solid var(--border);
   transition: background 0.1s;
 }
 .tracker-table tbody tr:hover { background: var(--surface); }
 
-/* Override hover for sticky cell */
-.tracker-table tbody tr:hover .col-habit {
+/* Override hover for sticky cells */
+.tracker-table tbody tr:hover .col-habit,
+.tracker-table tbody tr:hover .col-progress {
   background: var(--surface);
 }
 
 .tracker-table tbody td {
   padding: 0;
   vertical-align: middle;
+  border-bottom: 1px solid var(--border);
 }
 
 /* ─── Habit name cell ────────────────────────────────── */
 .habit-name-cell {
   padding: 0.75rem 0.75rem 0.75rem 0;
-  position: relative;
 }
 
 .habit-name-text {
@@ -322,41 +347,36 @@ h1, h2, h3 {
   font-variant-numeric: tabular-nums;
 }
 
-/* ─── Add Habit ──────────────────────────────────────── */
-.add-habit-row td { padding: 0.8rem 0; }
+/* ─── Add Habit — Ghost Row ──────────────────────────── */
 
-.add-habit-btn {
-  background: none;
-  border: none;
-  cursor: pointer;
-  color: var(--muted);
+.ghost-habit-input {
   font-family: var(--font-sans);
-  font-size: 0.82rem;
-  font-weight: 400;
-  padding: 0;
-  letter-spacing: 0.03em;
-  transition: color 0.15s;
-  display: flex;
-  align-items: center;
-  gap: 0.35rem;
-}
-.add-habit-btn:hover { color: var(--ink); }
-
-.add-habit-input-row td { padding: 0.55rem 0; }
-
-.add-habit-input {
-  font-family: var(--font-sans);
-  font-size: 0.9rem;
+  font-size: 0.88rem;
   font-weight: 400;
   background: none;
   border: none;
-  border-bottom: 1.5px solid var(--ink);
   outline: none;
-  width: 180px;
+  width: 200px;
   padding: 0.15rem 0;
   color: var(--ink);
+  opacity: 0.45;
+  transition: opacity 0.15s, border-bottom-color 0.15s;
+  border-bottom: 1.5px solid transparent;
 }
-.add-habit-input::placeholder { color: var(--muted); }
+
+.ghost-habit-input::placeholder {
+  color: var(--muted);
+  font-style: italic;
+}
+
+.ghost-habit-input:focus {
+  opacity: 1;
+  border-bottom-color: var(--ink);
+}
+
+.ghost-habit-input:focus::placeholder {
+  color: transparent;
+}
 
 /* ─── Stats footer ───────────────────────────────────── */
 .stats-row {
@@ -400,29 +420,83 @@ h1, h2, h3 {
   font-size: 1.1rem;
 }
 
-/* ─── Mobile (≤ 640px) ───────────────────────────────── */
-@media (max-width: 640px) {
-  .container { padding: 0 1rem; }
+/* Mobile daily view (hidden on desktop) */
+.mobile-daily-view {
+  display: none;
+}
 
-  .site-header { padding: 1rem 0; margin-bottom: 1.25rem; }
-  .site-logo { font-size: 1.3rem; }
-  .month-nav-label { min-width: 100px; font-size: 0.9rem; }
+/* ─── Mobile (≤ 768px) ───────────────────────────────── */
+@media (max-width: 768px) {
+  .container { padding: 0 1.25rem; }
 
-  .col-habit { width: 100px; }
-  .habit-name-text { max-width: 86px; font-size: 0.82rem; }
-  .habit-name-input { width: 86px; font-size: 0.82rem; }
+  .site-header { padding: 1.1rem 0; margin-bottom: 1.5rem; }
+  .site-logo { font-size: 1.35rem; }
+  
+  /* Hide monthly grid and header month navigation on mobile */
+  .tracker,
+  .month-nav {
+    display: none !important;
+  }
 
-  .day-cell-btn { padding: 0.9rem 0; }
-  .day-dot { width: 8px; height: 8px; }
+  /* Show mobile daily view */
+  .mobile-daily-view {
+    display: block;
+    margin-top: 0.5rem;
+  }
 
-  .tracker-table thead th { font-size: 0.55rem; }
+  .mobile-date-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 1.75rem;
+    border-bottom: 1.5px solid var(--ink);
+    padding-bottom: 0.85rem;
+  }
 
-  .progress-cell { font-size: 0.62rem; padding-left: 0.25rem; }
-  .col-progress { width: 44px; }
+  .mobile-date-title {
+    font-family: var(--font-serif);
+    font-size: 1.25rem;
+    font-style: italic;
+    color: var(--ink);
+  }
 
-  .stats-row { gap: 1rem; }
-  .stat-value { font-size: 1.8rem; }
-  .stat-label { font-size: 0.6rem; }
+  .mobile-habit-list {
+    display: flex;
+    flex-direction: column;
+  }
+
+  .mobile-habit-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 1.05rem 0;
+    border: none;
+    border-bottom: 1px solid var(--border);
+    background: transparent;
+    width: 100%;
+    text-align: left;
+    outline: none;
+    cursor: pointer;
+    transition: background 0.1s;
+  }
+  .mobile-habit-item:active {
+    background: var(--surface);
+  }
+
+  .mobile-habit-name {
+    font-family: var(--font-sans);
+    font-size: 0.95rem;
+    font-weight: 400;
+    color: var(--ink);
+    transition: opacity 0.2s, text-decoration 0.2s;
+  }
+
+  .mobile-habit-item.completed .mobile-habit-name {
+    text-decoration: line-through;
+    opacity: 0.4;
+  }
+
+
 }
 
 /* ─── Detail Page & Form ────────────────────────────── */
@@ -611,3 +685,156 @@ h1, h2, h3 {
 
 /* ─── Selection ──────────────────────────────────────── */
 ::selection { background: var(--ink); color: var(--cream); }
+
+/* ─── Settings Modal ─────────────────────────────────── */
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.3);
+  backdrop-filter: blur(4px);
+  z-index: 100;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  animation: fadeIn 0.2s ease-out;
+}
+
+[data-theme="dark"] .modal-overlay {
+  background: rgba(0, 0, 0, 0.6);
+}
+
+.modal-box {
+  background: var(--cream);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  width: 90%;
+  max-width: 440px;
+  padding: 1.75rem;
+  box-shadow: 0 12px 36px rgba(0, 0, 0, 0.08);
+  animation: scaleUp 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+[data-theme="dark"] .modal-box {
+  box-shadow: 0 12px 36px rgba(0, 0, 0, 0.45);
+}
+
+.modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 1.5rem;
+  padding-bottom: 0.75rem;
+  border-bottom: 1px solid var(--border);
+}
+
+.modal-title {
+  font-family: var(--font-serif);
+  font-size: 1.35rem;
+  font-style: italic;
+  color: var(--ink);
+  margin: 0;
+}
+
+.modal-close {
+  background: none;
+  border: none;
+  font-size: 1.8rem;
+  line-height: 1;
+  color: var(--muted);
+  cursor: pointer;
+  padding: 0;
+  margin: 0;
+  transition: color 0.15s;
+}
+
+.modal-close:hover {
+  color: var(--ink);
+}
+
+.modal-body {
+  display: flex;
+  flex-direction: column;
+}
+
+.setting-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 1.25rem 0;
+  border-bottom: 1px solid var(--border);
+}
+
+.setting-item:last-child {
+  border-bottom: none;
+}
+
+.setting-info {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  padding-right: 1.5rem;
+}
+
+.setting-label {
+  font-family: var(--font-sans);
+  font-size: 0.95rem;
+  font-weight: 500;
+  color: var(--ink);
+}
+
+.setting-description {
+  font-family: var(--font-sans);
+  font-size: 0.76rem;
+  color: var(--muted);
+  line-height: 1.3;
+}
+
+/* Custom Toggle Switch */
+.toggle-switch {
+  width: 44px;
+  height: 24px;
+  border-radius: 12px;
+  border: 1.5px solid var(--dot-border);
+  background: transparent;
+  position: relative;
+  cursor: pointer;
+  outline: none;
+  padding: 0;
+  transition: background-color 0.2s, border-color 0.2s;
+  flex-shrink: 0;
+}
+
+.toggle-slider {
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: var(--ink);
+  position: absolute;
+  top: 2.5px;
+  left: 3px;
+  transition: transform 0.2s, background-color 0.2s;
+}
+
+.toggle-switch.active {
+  background-color: var(--ink);
+  border-color: var(--ink);
+}
+
+.toggle-switch.active .toggle-slider {
+  transform: translateX(20px);
+  background-color: var(--cream);
+}
+
+/* Modal Animations */
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes scaleUp {
+  from { transform: scale(0.95); opacity: 0; }
+  to { transform: scale(1); opacity: 1; }
+}

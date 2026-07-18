@@ -143,7 +143,7 @@ export default function HabitDetailPage({
                 min="1"
                 max="31"
                 className="detail-input-goal"
-                placeholder="Every day"
+                placeholder="Daily"
                 value={goalValue !== null ? goalValue : ""}
                 onChange={(e) => {
                   const val = e.target.value;
@@ -159,11 +159,6 @@ export default function HabitDetailPage({
                   }
                 }}
               />
-              <span className="goal-helper-text">
-                {goalValue !== null && goalValue > 0
-                  ? `Goal: Complete ${goalValue} times this month`
-                  : "Every day"}
-              </span>
             </div>
           </div>
 
