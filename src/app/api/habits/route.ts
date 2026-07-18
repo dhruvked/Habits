@@ -4,7 +4,7 @@ import { NextResponse } from "next/server";
 // GET /api/habits
 export async function GET() {
   const habits = await sql`
-    SELECT id, name, position
+    SELECT id, name, position, description, goal_value
     FROM habits
     ORDER BY position ASC, id ASC
   `;
@@ -22,9 +22,9 @@ export async function POST(req: Request) {
   const position = (maxPos.max as number) + 1;
 
   const [habit] = await sql`
-    INSERT INTO habits (name, position)
-    VALUES (${name.trim()}, ${position})
-    RETURNING id, name, position
+    INSERT INTO habits (name, position, description, goal_value)
+    VALUES (${name.trim()}, ${position}, '', 0)
+    RETURNING id, name, position, description, goal_value
   `;
   return NextResponse.json(habit, { status: 201 });
 }

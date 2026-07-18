@@ -150,7 +150,10 @@ h1, h2, h3 {
   width: 100%;
   overflow-x: auto;
   -webkit-overflow-scrolling: touch;
-  /* negative margin trick to allow full-bleed scroll on mobile */
+  scrollbar-width: none; /* Firefox */
+}
+.tracker::-webkit-scrollbar {
+  display: none; /* Chrome, Safari, Opera */
 }
 
 .tracker-table {
@@ -230,10 +233,13 @@ h1, h2, h3 {
   overflow: hidden;
   text-overflow: ellipsis;
   max-width: 110px;
-  padding-right: 1.25rem;
+  color: var(--ink);
+  text-decoration: none;
   transition: opacity 0.15s;
 }
-.habit-name-text:hover { opacity: 0.55; }
+.habit-name-text:hover {
+  opacity: 0.6;
+}
 
 .habit-name-input {
   font-family: var(--font-sans);
@@ -247,24 +253,6 @@ h1, h2, h3 {
   padding: 0.1rem 0;
   color: var(--ink);
 }
-
-.delete-btn {
-  position: absolute;
-  right: 0.25rem;
-  top: 50%;
-  transform: translateY(-50%);
-  background: none;
-  border: none;
-  cursor: pointer;
-  color: var(--muted);
-  font-size: 0.8rem;
-  padding: 0.15rem 0.25rem;
-  opacity: 0;
-  transition: opacity 0.15s, color 0.15s;
-  line-height: 1;
-}
-.habit-name-cell:hover .delete-btn { opacity: 1; }
-.delete-btn:hover { color: var(--red); }
 
 /* Mobile: always show delete btn */
 @media (hover: none) {
@@ -412,11 +400,6 @@ h1, h2, h3 {
   font-size: 1.1rem;
 }
 
-/* Week selector (hidden by default on desktop) */
-.week-selector-container {
-  display: none;
-}
-
 /* ─── Mobile (≤ 640px) ───────────────────────────────── */
 @media (max-width: 640px) {
   .container { padding: 0 1rem; }
@@ -424,50 +407,6 @@ h1, h2, h3 {
   .site-header { padding: 1rem 0; margin-bottom: 1.25rem; }
   .site-logo { font-size: 1.3rem; }
   .month-nav-label { min-width: 100px; font-size: 0.9rem; }
-
-  .week-selector-container {
-    display: flex;
-    justify-content: space-between;
-    gap: 0.25rem;
-    margin-bottom: 1.25rem;
-    border-bottom: 1.5px solid var(--border);
-    padding-bottom: 0.75rem;
-  }
-
-  .week-selector-btn {
-    background: none;
-    border: none;
-    cursor: pointer;
-    font-family: var(--font-sans);
-    color: var(--muted);
-    font-size: 0.72rem;
-    font-weight: 500;
-    padding: 0.4rem 0.25rem;
-    border-radius: var(--radius);
-    transition: all 0.15s;
-    flex-grow: 1;
-    text-align: center;
-    border: 1px solid transparent;
-  }
-
-  .week-selector-btn:hover {
-    color: var(--ink);
-    background: var(--surface);
-  }
-
-  .week-selector-btn.active {
-    color: var(--cream);
-    background: var(--ink);
-    border-color: var(--ink);
-  }
-
-  .week-range-hint {
-    display: block;
-    font-size: 0.55rem;
-    opacity: 0.7;
-    font-weight: 300;
-    margin-top: 0.05rem;
-  }
 
   .col-habit { width: 100px; }
   .habit-name-text { max-width: 86px; font-size: 0.82rem; }
@@ -478,31 +417,191 @@ h1, h2, h3 {
 
   .tracker-table thead th { font-size: 0.55rem; }
 
-  /* Hide all days on mobile by default */
-  .tracker-table th:not(.col-habit):not(.col-progress),
-  .tracker-table td:not(.col-habit):not(.col-progress) {
-    display: none !important;
-  }
-
-  /* Show only active week days */
-  .show-week-1 .w-1,
-  .show-week-2 .w-2,
-  .show-week-3 .w-3,
-  .show-week-4 .w-4,
-  .show-week-5 .w-5 {
-    display: table-cell !important;
-  }
-
-  .tracker {
-    overflow-x: hidden;
-  }
-
   .progress-cell { font-size: 0.62rem; padding-left: 0.25rem; }
   .col-progress { width: 44px; }
 
   .stats-row { gap: 1rem; }
   .stat-value { font-size: 1.8rem; }
   .stat-label { font-size: 0.6rem; }
+}
+
+/* ─── Detail Page & Form ────────────────────────────── */
+.back-link {
+  font-size: 0.85rem;
+  color: var(--muted);
+  text-decoration: none;
+  transition: color 0.15s;
+}
+.back-link:hover {
+  color: var(--ink);
+}
+
+.detail-content {
+  max-width: 600px;
+  margin: 3rem auto;
+}
+
+.detail-form {
+  display: flex;
+  flex-direction: column;
+  gap: 2rem;
+}
+
+.form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.form-label {
+  font-size: 0.72rem;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--muted);
+}
+
+.label-helper {
+  text-transform: lowercase;
+  font-weight: 300;
+  opacity: 0.8;
+}
+
+.detail-input-header {
+  font-family: var(--font-serif);
+  font-size: 1.8rem;
+  background: none;
+  border: none;
+  border-bottom: 1.5px solid var(--border);
+  color: var(--ink);
+  outline: none;
+  padding: 0.25rem 0;
+  transition: border-color 0.2s;
+}
+.detail-input-header:focus {
+  border-color: var(--ink);
+}
+
+.goal-input-wrapper {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.detail-input-goal {
+  font-family: var(--font-sans);
+  font-size: 1.1rem;
+  background: none;
+  border: none;
+  border-bottom: 1.5px solid var(--border);
+  color: var(--ink);
+  outline: none;
+  padding: 0.25rem 0;
+  width: 60px;
+  transition: border-color 0.2s;
+  text-align: center;
+}
+.detail-input-goal:focus {
+  border-color: var(--ink);
+}
+
+.detail-input-goal:focus::placeholder,
+.detail-input-header:focus::placeholder {
+  color: transparent;
+}
+
+.goal-helper-text {
+  font-size: 0.85rem;
+  color: var(--muted);
+}
+
+.detail-textarea {
+  font-family: var(--font-sans);
+  font-size: 0.95rem;
+  background: none;
+  border: 1.5px solid var(--border);
+  color: var(--ink);
+  outline: none;
+  padding: 0.75rem;
+  border-radius: var(--radius);
+  transition: border-color 0.2s;
+  resize: vertical;
+}
+.detail-textarea:focus {
+  border-color: var(--ink);
+}
+
+.form-actions {
+  display: flex;
+  align-items: center;
+  gap: 1.5rem;
+  margin-top: 1rem;
+}
+
+.save-btn {
+  background: var(--ink);
+  color: var(--cream);
+  border: 1.5px solid var(--ink);
+  font-family: var(--font-sans);
+  font-size: 0.88rem;
+  font-weight: 500;
+  padding: 0.6rem 1.5rem;
+  border-radius: var(--radius);
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+}
+.save-btn:hover {
+  background: transparent;
+  color: var(--ink);
+}
+.save-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.cancel-link {
+  font-size: 0.88rem;
+  color: var(--muted);
+  text-decoration: none;
+  transition: color 0.15s;
+}
+.cancel-link:hover {
+  color: var(--ink);
+}
+
+.delete-habit-btn {
+  background: transparent;
+  color: var(--red);
+  border: 1.5px solid var(--red);
+  font-family: var(--font-sans);
+  font-size: 0.88rem;
+  font-weight: 500;
+  padding: 0.6rem 1.5rem;
+  border-radius: var(--radius);
+  cursor: pointer;
+  transition: all 0.15s ease-in-out;
+  margin-left: auto;
+}
+.delete-habit-btn:hover {
+  background: var(--red);
+  color: #fff;
+}
+
+.error-banner {
+  background: rgba(192, 57, 43, 0.1);
+  color: var(--red);
+  padding: 0.75rem 1rem;
+  border-radius: var(--radius);
+  font-size: 0.88rem;
+  margin-bottom: 1.5rem;
+  border-left: 3px solid var(--red);
+}
+
+.goal-achieved {
+  font-weight: 500;
+  color: var(--ink);
+  text-decoration: underline;
+  text-underline-offset: 3px;
 }
 
 /* ─── Scrollbar ──────────────────────────────────────── */

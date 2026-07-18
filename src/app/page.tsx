@@ -1,12 +1,15 @@
 "use client";
 
 import { useEffect, useState, useCallback, useRef } from "react";
+import Link from "next/link";
 
 /* ─── Types ───────────────────────────────────────────── */
 interface Habit {
   id: number;
   name: string;
   position: number;
+  description?: string;
+  goal_value?: number;
 }
 
 interface Completion {
@@ -46,30 +49,10 @@ export default function HabitTracker() {
   const [loading, setLoading]       = useState(true);
   const [addingHabit, setAddingHabit] = useState(false);
   const [newHabitName, setNewHabitName] = useState("");
-  const [editingId, setEditingId]   = useState<number | null>(null);
-  const [editingName, setEditingName] = useState("");
   const [dark, setDark]             = useState(false);
-  const [selectedWeek, setSelectedWeek] = useState<number>(1);
 
-  const getWeekForDay = (d: number) => {
-    if (d <= 7) return 1;
-    if (d <= 14) return 2;
-    if (d <= 21) return 3;
-    if (d <= 28) return 4;
-    return 5;
-  };
-
-  useEffect(() => {
-    const d = new Date();
-    if (d.getFullYear() === year && d.getMonth() === month) {
-      setSelectedWeek(getWeekForDay(d.getDate()));
-    } else {
-      setSelectedWeek(1);
-    }
-  }, [year, month]);
 
   const addInputRef  = useRef<HTMLInputElement>(null);
-  const editInputRef = useRef<HTMLInputElement>(null);
 
   const days     = daysInMonth(year, month);
   const monthKey = `${year}-${String(month + 1).padStart(2, "0")}`;
@@ -112,7 +95,6 @@ export default function HabitTracker() {
 
   /* ── Focus helpers ── */
   useEffect(() => { if (addingHabit)    addInputRef.current?.focus();  }, [addingHabit]);
-  useEffect(() => { if (editingId !== null) editInputRef.current?.focus(); }, [editingId]);
 
   /* ── Toggle completion ── */
   const toggleDay = async (habitId: number, day: number) => {
@@ -148,24 +130,9 @@ export default function HabitTracker() {
     setAddingHabit(false);
   };
 
-  /* ── Rename habit ── */
-  const submitRename = async (id: number) => {
-    const name = editingName.trim();
-    setEditingId(null);
-    if (!name) return;
-    await fetch(`/api/habits/${id}`, {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ name }),
-    });
-    setHabits((prev) => prev.map((h) => (h.id === id ? { ...h, name } : h)));
-  };
 
-  /* ── Delete habit ── */
-  const deleteHabit = async (id: number) => {
-    setHabits((prev) => prev.filter((h) => h.id !== id));
-    await fetch(`/api/habits/${id}`, { method: "DELETE" });
-  };
+
+
 
   /* ── Month navigation ── */
   const prevMonth = () => {
@@ -177,15 +144,7 @@ export default function HabitTracker() {
     else setMonth((m) => m + 1);
   };
 
-  /* ── Stats ── */
-  const totalPossible = habits.length * days;
-  const totalDone     = completions.size;
-  const pct           = totalPossible > 0
-    ? Math.round((totalDone / totalPossible) * 100)
-    : 0;
-  const todayDone = habits.filter((h) =>
-    completions.has(`${h.id}:${todayYMD}`)
-  ).length;
+
 
   const getWeekRangeLabel = (w: number) => {
     switch (w) {
@@ -238,24 +197,7 @@ export default function HabitTracker() {
           <div className="loading-state">loading your habits…</div>
         ) : (
           <>
-            {/* Week navigation (only visible on mobile via CSS) */}
-            <div className="week-selector-container">
-              {Array.from({ length: 5 }, (_, i) => {
-                const w = i + 1;
-                if (w === 5 && days < 29) return null;
-                return (
-                  <button
-                    key={w}
-                    className={`week-selector-btn ${selectedWeek === w ? "active" : ""}`}
-                    onClick={() => setSelectedWeek(w)}
-                  >
-                    W{w} <span className="week-range-hint">({getWeekRangeLabel(w)})</span>
-                  </button>
-                );
-              })}
-            </div>
-
-            <div className={`tracker show-week-${selectedWeek}`}>
+            <div className="tracker">
               <table className="tracker-table" aria-label="Habit tracker">
                 <thead>
                   <tr>
@@ -264,14 +206,12 @@ export default function HabitTracker() {
                       const day  = i + 1;
                       const ymd  = toYMD(year, month, day);
                       const isToday = ymd === todayYMD;
-                      const weekNum = getWeekForDay(day);
                       return (
                         <th
                           key={day}
                           className={[
                             isWeekEnd(day) ? "week-separator" : "",
                             isToday        ? "today-header"   : "",
-                            `w-${weekNum}`,
                           ].join(" ")}
                           title={`${MONTH_NAMES[month]} ${day}`}
                         >
@@ -295,36 +235,15 @@ export default function HabitTracker() {
 
                     return (
                       <tr key={habit.id}>
-                        {/* Habit name — sticky */}
+                        {/* Habit name — sticky link */}
                         <td className="habit-name-cell col-habit">
-                          {editingId === habit.id ? (
-                            <input
-                              ref={editInputRef}
-                              className="habit-name-input"
-                              value={editingName}
-                              onChange={(e) => setEditingName(e.target.value)}
-                              onBlur={() => submitRename(habit.id)}
-                              onKeyDown={(e) => {
-                                if (e.key === "Enter")  submitRename(habit.id);
-                                if (e.key === "Escape") setEditingId(null);
-                              }}
-                            />
-                          ) : (
-                            <span
-                              className="habit-name-text"
-                              onClick={() => { setEditingId(habit.id); setEditingName(habit.name); }}
-                              title={`Click to rename: ${habit.name}`}
-                            >
-                              {habit.name}
-                            </span>
-                          )}
-                          <button
-                            className="delete-btn"
-                            onClick={() => deleteHabit(habit.id)}
-                            aria-label={`Delete ${habit.name}`}
+                          <Link
+                            href={`/habit/${habit.id}`}
+                            className="habit-name-text"
+                            title={`Click to view details: ${habit.name}`}
                           >
-                            ×
-                          </button>
+                            {habit.name}
+                          </Link>
                         </td>
 
                         {/* Day cells */}
@@ -334,7 +253,6 @@ export default function HabitTracker() {
                           const done     = completions.has(`${habit.id}:${ymd}`);
                           const isFuture = ymd > todayYMD;
                           const isToday  = ymd === todayYMD;
-                          const weekNum  = getWeekForDay(day);
 
                           return (
                             <td
@@ -342,7 +260,6 @@ export default function HabitTracker() {
                               className={[
                                 "day-cell",
                                 isWeekEnd(day) ? "week-separator" : "",
-                                `w-${weekNum}`,
                               ].join(" ")}
                             >
                               <button
@@ -363,7 +280,15 @@ export default function HabitTracker() {
                         })}
 
                         {/* Progress */}
-                        <td className="progress-cell">{habitDone}/{days}</td>
+                        <td className="progress-cell">
+                          {habit.goal_value && habit.goal_value > 0 ? (
+                            <span className={habitDone >= habit.goal_value ? "goal-achieved" : ""}>
+                              {habitDone}/{habit.goal_value}
+                            </span>
+                          ) : (
+                            <span>{habitDone}/{days}</span>
+                          )}
+                        </td>
                       </tr>
                     );
                   })}
@@ -407,23 +332,7 @@ export default function HabitTracker() {
               </table>
             </div>
 
-            {/* ── Stats ── */}
-            {habits.length > 0 && (
-              <div className="stats-row" role="complementary" aria-label="Monthly statistics">
-                <div className="stat-item">
-                  <span className="stat-value">{pct}%</span>
-                  <span className="stat-label">Month completion</span>
-                </div>
-                <div className="stat-item">
-                  <span className="stat-value">{todayDone}/{habits.length}</span>
-                  <span className="stat-label">Today&apos;s habits</span>
-                </div>
-                <div className="stat-item">
-                  <span className="stat-value">{totalDone}</span>
-                  <span className="stat-label">Total check-ins</span>
-                </div>
-              </div>
-            )}
+
           </>
         )}
       </main>

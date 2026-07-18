@@ -11,6 +11,10 @@ export async function GET() {
     )
   `;
 
+  // Migration: Add new columns if they do not exist
+  await sql`ALTER TABLE habits ADD COLUMN IF NOT EXISTS description TEXT DEFAULT ''`;
+  await sql`ALTER TABLE habits ADD COLUMN IF NOT EXISTS goal_value INTEGER DEFAULT 0`;
+
   await sql`
     CREATE TABLE IF NOT EXISTS completions (
       id         SERIAL PRIMARY KEY,
