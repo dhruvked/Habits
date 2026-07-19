@@ -471,6 +471,20 @@ export default function HabitTracker() {
               )}
 
               <div className="header-actions">
+                {/* Analytics Navigation */}
+                <Link
+                  href="/stats"
+                  className="theme-btn"
+                  title="Analytics Dashboard"
+                  style={{ textDecoration: 'none' }}
+                >
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <line x1="18" y1="20" x2="18" y2="10"></line>
+                    <line x1="12" y1="20" x2="12" y2="4"></line>
+                    <line x1="6" y1="20" x2="6" y2="14"></line>
+                  </svg>
+                </Link>
+
                 {/* Settings toggle */}
                 <button
                   className="theme-btn"
@@ -596,22 +610,44 @@ export default function HabitTracker() {
                 {habits.map((habit) => {
                   const completed = completions.has(`${habit.id}:${mobileYMD}`);
                   return (
-                    <button
-                      key={habit.id}
-                      className={`mobile-habit-item ${completed ? "completed" : ""}`}
-                      onClick={() => toggleMobileDay(habit.id, mobileYMD)}
-                      aria-label={`${habit.name}: ${completed ? "completed" : "incomplete"}`}
-                      aria-pressed={completed}
-                    >
-                      <span className="mobile-habit-name">{habit.name}</span>
-                    </button>
+                    <div key={habit.id} style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                      <button
+                        className={`mobile-habit-item ${completed ? "completed" : ""}`}
+                        onClick={() => toggleMobileDay(habit.id, mobileYMD)}
+                        aria-label={`${habit.name}: ${completed ? "completed" : "incomplete"}`}
+                        aria-pressed={completed}
+                        style={{ flex: 1 }}
+                      >
+                        <span className="mobile-habit-name">{habit.name}</span>
+                      </button>
+                      <motion.button
+                        className="mobile-delete-btn"
+                        onClick={async () => {
+                          if (!window.confirm("Delete this habit?")) return;
+                          try {
+                            const res = await fetch(`/api/habits/${habit.id}`, { method: "DELETE" });
+                            if (res.ok) setHabits(habits.filter(h => h.id !== habit.id));
+                          } catch (e) {
+                            console.error(e);
+                          }
+                        }}
+                        whileTap={{ scale: 0.8, rotate: 90 }}
+                        aria-label="Delete habit"
+                        style={{
+                          background: 'transparent', border: 'none', color: 'var(--muted)', 
+                          fontSize: '1.4rem', padding: '0 8px', cursor: 'pointer', outline: 'none'
+                        }}
+                      >
+                        ×
+                      </motion.button>
+                    </div>
                   );
                 })}
 
                 {/* Mobile Ghost Row Input */}
                 <div style={{ padding: "1.1rem 0" }}>
                   <input
-                    className="ghost-habit-input"
+                    className="ghost-habit-input" autoCapitalize="none" autoComplete="off" spellCheck="false"
                     placeholder="+ add a habit…"
                     value={newHabitName}
                     onChange={(e) => setNewHabitName(e.target.value)}
@@ -632,13 +668,6 @@ export default function HabitTracker() {
             </div>
           )}
           
-          {/* Yearly Analytics Heatmap */}
-          <YearlyHeatmap 
-            liveCompletions={completions} 
-            liveTotalHabits={habits.length} 
-            currentMonthKey={monthKey} 
-            monthlyScore={monthlyScore}
-          />
       </main>
 
       {/* ── Settings Modal ── */}
