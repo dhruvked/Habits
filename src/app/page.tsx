@@ -53,6 +53,7 @@ export default function HabitTracker() {
   const [cloneHabits, setCloneHabits] = useState(true);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [isMobile, setIsMobile]     = useState(false);
+  const [draggedHabitId, setDraggedHabitId] = useState<number | null>(null);
 
   /* ── Viewport dynamic check ── */
   useEffect(() => {
@@ -156,6 +157,58 @@ export default function HabitTracker() {
   };
 
 
+  /* ── Drag & Drop Reordering (mouse-event based, not HTML5 DnD) ── */
+  const handleGripMouseDown = (e: React.MouseEvent, habitId: number) => {
+    e.preventDefault(); // prevent text selection during drag
+
+    setDraggedHabitId(habitId);
+    document.body.style.cursor = "grabbing";
+    document.body.style.userSelect = "none";
+
+    const onMouseMove = (moveEvt: MouseEvent) => {
+      // Hit-test each habit row to find where we're hovering
+      const rows = document.querySelectorAll<HTMLElement>("[data-habit-id]");
+      let targetIndex = rows.length - 1;
+      for (let i = 0; i < rows.length; i++) {
+        const rect = rows[i].getBoundingClientRect();
+        if (moveEvt.clientY < rect.top + rect.height / 2) {
+          targetIndex = i;
+          break;
+        }
+      }
+
+      setHabits((prev) => {
+        const fromIdx = prev.findIndex((h) => h.id === habitId);
+        if (fromIdx === -1 || fromIdx === targetIndex) return prev;
+        const next = [...prev];
+        const [item] = next.splice(fromIdx, 1);
+        next.splice(targetIndex, 0, item);
+        return next;
+      });
+    };
+
+    const onMouseUp = () => {
+      document.body.style.cursor = "";
+      document.body.style.userSelect = "";
+      document.removeEventListener("mousemove", onMouseMove);
+      document.removeEventListener("mouseup", onMouseUp);
+      setDraggedHabitId(null);
+
+      // Persist new positions
+      setHabits((prev) => {
+        const ordered = prev.map((h, i) => ({ ...h, position: i }));
+        fetch("/api/habits/reorder", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ orders: ordered.map((h) => ({ id: h.id, position: h.position })) }),
+        }).catch(() => {});
+        return ordered;
+      });
+    };
+
+    document.addEventListener("mousemove", onMouseMove);
+    document.addEventListener("mouseup", onMouseUp);
+  };
 
   /* ── Toggle completion ── */
   const toggleDay = async (habitId: number, day: number) => {
@@ -323,16 +376,29 @@ export default function HabitTracker() {
                     ).filter(Boolean).length;
 
                     return (
-                      <tr key={habit.id}>
+                      <tr
+                        key={habit.id}
+                        data-habit-id={habit.id}
+                        className={draggedHabitId === habit.id ? "dragging" : ""}
+                      >
                         {/* Habit name — sticky link */}
                         <td className="habit-name-cell col-habit">
-                          <Link
-                            href={`/habit/${habit.id}`}
-                            className="habit-name-text"
-                            title={`Click to view details: ${habit.name}`}
-                          >
-                            {habit.name}
-                          </Link>
+                          <div style={{ display: "flex", alignItems: "center", gap: "0.25rem" }}>
+                            <span
+                              className="drag-handle"
+                              onMouseDown={(e) => handleGripMouseDown(e, habit.id)}
+                              title="Drag to reorder"
+                            >
+                              ⋮⋮
+                            </span>
+                            <Link
+                              href={`/habit/${habit.id}`}
+                              className="habit-name-text"
+                              title={`Click to view details: ${habit.name}`}
+                            >
+                              {habit.name}
+                            </Link>
+                          </div>
                         </td>
 
                         {/* Day cells */}

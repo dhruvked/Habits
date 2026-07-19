@@ -54,7 +54,7 @@ h1, h2, h3 {
 
 /* ─── Layout ─────────────────────────────────────────── */
 .container {
-  max-width: 1140px;
+  max-width: 1350px;
   margin: 0 auto;
   padding: 0 1.5rem;
 }
@@ -178,7 +178,7 @@ h1, h2, h3 {
   border-collapse: separate;
   border-spacing: 0;
   table-layout: fixed;
-  min-width: 1150px; /* guarantees columns never squish on smaller monitors */
+  min-width: 1250px; /* guarantees columns never squish on smaller monitors */
 }
 
 /* ─── Sticky habit name column ───────────────────────── */
@@ -188,7 +188,7 @@ h1, h2, h3 {
   background: var(--cream);
   z-index: 5 !important;
   transition: background 0.25s;
-  width: 130px;
+  width: 140px;
 }
 
 /* Day header row */
@@ -838,3 +838,31 @@ h1, h2, h3 {
   from { transform: scale(0.95); opacity: 0; }
   to { transform: scale(1); opacity: 1; }
 }
+
+/* ─── Drag & Drop Reordering ────────────────────────── */
+.drag-handle {
+  cursor: grab;
+  color: var(--muted);
+  font-size: 0.8rem;
+  font-family: var(--font-sans);
+  user-select: none;
+  padding: 0 4px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0.3;
+  transition: opacity 0.15s, color 0.15s;
+}
+.drag-handle:hover {
+  opacity: 0.8;
+  color: var(--ink);
+}
+.drag-handle:active {
+  cursor: grabbing;
+}
+
+.tracker-table tbody tr.dragging {
+  opacity: 0.4;
+  background: var(--surface);
+}
+
