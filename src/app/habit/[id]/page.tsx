@@ -25,6 +25,7 @@ export default function HabitDetailPage({
   const [description, setDescription] = useState("");
   const [goalValue, setGoalValue] = useState<number | null>(null);
   const [error, setError] = useState("");
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
 
   useEffect(() => {
     // Apply DB migrations first
@@ -75,10 +76,11 @@ export default function HabitDetailPage({
     }
   };
 
-  const handleDelete = async () => {
-    if (!window.confirm("Are you sure you want to delete this habit? All check-ins will be permanently deleted.")) {
-      return;
-    }
+  const handleDelete = () => {
+    setShowDeleteModal(true);
+  };
+
+  const confirmDelete = async () => {
     setSaving(true);
     setError("");
 
@@ -93,6 +95,7 @@ export default function HabitDetailPage({
     } catch (err: any) {
       setError(err.message);
       setSaving(false);
+      setShowDeleteModal(false);
     }
   };
 
@@ -197,6 +200,36 @@ export default function HabitDetailPage({
           </div>
         </form>
       </main>
+
+      {/* ── Custom Delete Confirmation Modal ── */}
+      {showDeleteModal && (
+        <div className="modal-overlay">
+          <div className="modal-content">
+            <h3 className="modal-title">Delete Habit</h3>
+            <p className="modal-description">
+              Are you sure you want to delete this habit? All check-ins will be permanently deleted.
+            </p>
+            <div className="modal-actions">
+              <button 
+                type="button" 
+                className="cancel-btn" 
+                onClick={() => setShowDeleteModal(false)}
+                disabled={saving}
+              >
+                Cancel
+              </button>
+              <button 
+                type="button" 
+                className="confirm-delete-btn" 
+                onClick={confirmDelete}
+                disabled={saving}
+              >
+                {saving ? "Deleting…" : "Confirm Delete"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

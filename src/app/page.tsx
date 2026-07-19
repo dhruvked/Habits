@@ -61,6 +61,9 @@ export default function HabitTracker() {
   const startX = useRef(0);
   const scrollLeftTracker = useRef(0);
 
+  /* ── Add Habit Ref ── */
+  const isAddingHabitRef = useRef(false);
+
   /* ── Viewport dynamic check ── */
   useEffect(() => {
     const media = window.matchMedia("(max-width: 768px)");
@@ -255,15 +258,26 @@ export default function HabitTracker() {
   /* ── Add habit ── */
   const submitAddHabit = async () => {
     const name = newHabitName.trim();
-    if (!name) return;
-    const res   = await fetch("/api/habits", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ name, month: monthKey }),
-    });
-    const habit = await res.json();
-    setHabits((prev) => [...prev, habit]);
-    setNewHabitName("");
+    if (!name || isAddingHabitRef.current) return;
+    
+    isAddingHabitRef.current = true;
+    setNewHabitName(""); // Optimistic clear for immediate feedback
+
+    try {
+      const res   = await fetch("/api/habits", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name, month: monthKey }),
+      });
+      if (res.ok) {
+        const habit = await res.json();
+        setHabits((prev) => [...prev, habit]);
+      } else {
+        setNewHabitName(name); // Restore on error
+      }
+    } finally {
+      isAddingHabitRef.current = false;
+    }
   };
 
 
