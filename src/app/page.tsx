@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect, useRef, useCallback } from "react";
 import Link from "next/link";
+import YearlyHeatmap from "@/components/YearlyHeatmap";
 import { motion, Reorder, useDragControls, AnimatePresence } from "framer-motion";
 
 /* ─── Types ───────────────────────────────────────────── */
@@ -383,8 +384,8 @@ export default function HabitTracker() {
   };
 
   return (
-    <div>
-      {/* ── Header ── */}
+    <div className="snap-container">
+      <div className="snap-section">
       <header className="site-header">
         <div className="container">
           <div className="site-header-inner">
@@ -609,6 +610,11 @@ export default function HabitTracker() {
             </div>
           )}
       </main>
+      </div>
+
+      <div className="snap-section heatmap-section">
+        <YearlyHeatmap />
+      </div>
 
       {/* ── Settings Modal ── */}
       {isSettingsOpen && (

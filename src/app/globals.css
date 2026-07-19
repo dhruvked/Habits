@@ -32,7 +32,12 @@
   color-scheme: dark;
 }
 
-html { font-size: 16px; }
+html, body { 
+  font-size: 16px; 
+  height: 100%;
+  margin: 0;
+  padding: 0;
+}
 
 body {
   background: var(--cream);
@@ -1087,3 +1092,89 @@ h1, h2, h3 {
   font-weight: 500;
 }
 
+
+/* ─── Scroll Snapping ────────────────────────────────── */
+.snap-container {
+  height: 100vh;
+  overflow-y: scroll;
+  scroll-snap-type: y proximity;
+  scroll-behavior: smooth;
+}
+
+.snap-section {
+  scroll-snap-align: start;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+/* ─── Yearly Heatmap ─────────────────────────────────── */
+.heatmap-section {
+  justify-content: center;
+  align-items: center;
+  background-color: var(--cream);
+  padding: 2rem;
+}
+
+.heatmap-container {
+  width: 100%;
+  max-width: 900px;
+  display: flex;
+  flex-direction: column;
+  gap: 2rem;
+}
+
+.heatmap-header {
+  display: flex;
+  flex-direction: column;
+}
+
+.heatmap-title {
+  font-family: var(--font-serif);
+  font-size: 2.5rem;
+  color: var(--ink);
+  letter-spacing: -0.02em;
+}
+
+.heatmap-subtitle {
+  color: var(--muted);
+  font-size: 0.85rem;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  font-weight: 500;
+}
+
+.heatmap-scroll {
+  overflow-x: auto;
+  padding-bottom: 1rem;
+}
+
+.heatmap-grid {
+  display: grid;
+  grid-template-rows: repeat(7, 1fr);
+  grid-auto-flow: column;
+  grid-auto-columns: 14px;
+  gap: 5px;
+}
+
+.heatmap-cell {
+  width: 14px;
+  height: 14px;
+  border-radius: 3px;
+  background-color: var(--surface-hover);
+}
+
+.heatmap-cell.out-of-range {
+  opacity: 0;
+  pointer-events: none;
+}
+
+.heatmap-months-labels {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 1rem;
+  color: var(--muted);
+  font-size: 0.75rem;
+  font-weight: 500;
+  padding-left: 10px;
+}
