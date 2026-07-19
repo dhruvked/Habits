@@ -610,37 +610,32 @@ export default function HabitTracker() {
                 {habits.map((habit) => {
                   const completed = completions.has(`${habit.id}:${mobileYMD}`);
                   return (
-                    <div key={habit.id} style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                      <button
-                        className={`mobile-habit-item ${completed ? "completed" : ""}`}
-                        onClick={() => toggleMobileDay(habit.id, mobileYMD)}
-                        aria-label={`${habit.name}: ${completed ? "completed" : "incomplete"}`}
-                        aria-pressed={completed}
-                        style={{ flex: 1 }}
-                      >
-                        <span className="mobile-habit-name">{habit.name}</span>
-                      </button>
-                      <motion.button
-                        className="mobile-delete-btn"
-                        onClick={async () => {
-                          if (!window.confirm("Delete this habit?")) return;
-                          try {
-                            const res = await fetch(`/api/habits/${habit.id}`, { method: "DELETE" });
-                            if (res.ok) setHabits(habits.filter(h => h.id !== habit.id));
-                          } catch (e) {
-                            console.error(e);
-                          }
-                        }}
-                        whileTap={{ scale: 0.8, rotate: 90 }}
-                        aria-label="Delete habit"
+                    <button
+                      key={habit.id}
+                      className={`mobile-habit-item ${completed ? "completed" : ""}`}
+                      onClick={() => toggleMobileDay(habit.id, mobileYMD)}
+                      aria-label={`${habit.name}: ${completed ? "completed" : "incomplete"}`}
+                      aria-pressed={completed}
+                      style={{ position: 'relative' }}
+                    >
+                      <span className="mobile-habit-name">{habit.name}</span>
+                      <motion.div
+                        initial={false}
+                        animate={{ scaleX: completed ? 1 : 0 }}
+                        transition={{ duration: 0.25, ease: "easeOut" }}
                         style={{
-                          background: 'transparent', border: 'none', color: 'var(--muted)', 
-                          fontSize: '1.4rem', padding: '0 8px', cursor: 'pointer', outline: 'none'
+                          position: 'absolute',
+                          top: '50%',
+                          left: '1.25rem',
+                          right: '1.25rem',
+                          height: '2px',
+                          background: 'currentColor',
+                          transformOrigin: 'left center',
+                          pointerEvents: 'none',
+                          opacity: 0.5
                         }}
-                      >
-                        ×
-                      </motion.button>
-                    </div>
+                      />
+                    </button>
                   );
                 })}
 
