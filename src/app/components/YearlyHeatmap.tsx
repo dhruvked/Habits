@@ -6,6 +6,7 @@ interface YearlyHeatmapProps {
   liveCompletions?: Set<string>;
   liveTotalHabits?: number;
   currentMonthKey?: string;
+  monthlyScore?: number;
 }
 
 interface CompletionData {
@@ -14,7 +15,12 @@ interface CompletionData {
   total: number;
 }
 
-export default function YearlyHeatmap({ liveCompletions = new Set(), liveTotalHabits = 0, currentMonthKey = "" }: YearlyHeatmapProps) {
+export default function YearlyHeatmap({ 
+  liveCompletions = new Set(), 
+  liveTotalHabits = 0, 
+  currentMonthKey = "",
+  monthlyScore = 0
+}: YearlyHeatmapProps) {
   const [stats, setStats] = useState<Record<string, { count: number; total: number }>>({});
   const [totalsByMonth, setTotalsByMonth] = useState<Record<string, number>>({});
   const [loading, setLoading] = useState(true);
@@ -114,40 +120,47 @@ export default function YearlyHeatmap({ liveCompletions = new Set(), liveTotalHa
           })}
           </div>
           
-          {/* Sparkline */}
-          <div className="sparkline-container" title="Last 7 Days Momentum">
-            {Array.from({ length: 7 }).map((_, i) => {
-              const d = new Date();
-              d.setDate(d.getDate() - (6 - i));
-              const sy = d.getFullYear();
-              const sm = String(d.getMonth() + 1).padStart(2, '0');
-              const sd = String(d.getDate()).padStart(2, '0');
-              const sDateStr = `${sy}-${sm}-${sd}`;
-              
-              let sCount = 0;
-              let sTotal = 0;
-              if (`${sy}-${sm}` === currentMonthKey) {
-                let liveCount = 0;
-                liveCompletions.forEach((key) => {
-                  if (key.endsWith(sDateStr)) liveCount++;
-                });
-                sCount = liveCount;
-                sTotal = liveTotalHabits;
-              } else {
-                sCount = stats[sDateStr]?.count || 0;
-                sTotal = stats[sDateStr]?.total || totalsByMonth[`${sy}-${sm}`] || 1;
-              }
-              
-              const pct = sTotal > 0 ? (sCount / sTotal) * 100 : 0;
-              return (
-                <div
-                  key={`spark-${i}`}
-                  className={`sparkline-bar ${sCount === 0 ? 'empty' : ''}`}
-                  style={{ height: `${Math.max(15, pct)}%` }}
-                  title={`${sDateStr}: ${sCount}/${sTotal}`}
-                />
-              );
-            })}
+          <div className="heatmap-metrics-group">
+            {/* Monthly Score */}
+            <div className="monthly-score-widget" title="Consistency Score (Month to Date)">
+              <span className="monthly-score-val">{monthlyScore}%</span>
+            </div>
+
+            {/* Sparkline */}
+            <div className="sparkline-container" title="Last 7 Days Momentum">
+              {Array.from({ length: 7 }).map((_, i) => {
+                const d = new Date();
+                d.setDate(d.getDate() - (6 - i));
+                const sy = d.getFullYear();
+                const sm = String(d.getMonth() + 1).padStart(2, '0');
+                const sd = String(d.getDate()).padStart(2, '0');
+                const sDateStr = `${sy}-${sm}-${sd}`;
+                
+                let sCount = 0;
+                let sTotal = 0;
+                if (`${sy}-${sm}` === currentMonthKey) {
+                  let liveCount = 0;
+                  liveCompletions.forEach((key) => {
+                    if (key.endsWith(sDateStr)) liveCount++;
+                  });
+                  sCount = liveCount;
+                  sTotal = liveTotalHabits;
+                } else {
+                  sCount = stats[sDateStr]?.count || 0;
+                  sTotal = stats[sDateStr]?.total || totalsByMonth[`${sy}-${sm}`] || 1;
+                }
+                
+                const pct = sTotal > 0 ? (sCount / sTotal) * 100 : 0;
+                return (
+                  <div
+                    key={`spark-${i}`}
+                    className={`sparkline-bar ${sCount === 0 ? 'empty' : ''}`}
+                    style={{ height: `${Math.max(15, pct)}%` }}
+                    title={`${sDateStr}: ${sCount}/${sTotal}`}
+                  />
+                );
+              })}
+            </div>
           </div>
         </div>
       )}

@@ -1222,7 +1222,7 @@ h1, h2, h3 {
 .intensity-4 { background: var(--ink); }
 
 /* ─── Monthly Score ──────────────────────────────────── */
-.monthly-score {
+.monthly-score-widget {
   font-family: var(--font-sans);
   font-size: 0.85rem;
   font-weight: 600;
@@ -1281,4 +1281,10 @@ h1, h2, h3 {
   background-color: var(--surface-hover);
   height: 4px !important;
   opacity: 1;
+}
+
+.heatmap-metrics-group {
+  display: flex;
+  align-items: flex-end;
+  gap: 1rem;
 }

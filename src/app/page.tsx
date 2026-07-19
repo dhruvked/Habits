@@ -471,11 +471,6 @@ export default function HabitTracker() {
               )}
 
               <div className="header-actions">
-                {/* Global Monthly Score */}
-                <div className="monthly-score" title="Consistency Score (Month to Date)">
-                  {monthlyScore}%
-                </div>
-
                 {/* Settings toggle */}
                 <button
                   className="theme-btn"
@@ -642,6 +637,7 @@ export default function HabitTracker() {
             liveCompletions={completions} 
             liveTotalHabits={habits.length} 
             currentMonthKey={monthKey} 
+            monthlyScore={monthlyScore}
           />
       </main>
 
