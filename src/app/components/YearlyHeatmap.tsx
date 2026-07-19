@@ -74,57 +74,43 @@ export default function YearlyHeatmap({ liveCompletions = new Set(), liveTotalHa
 
   return (
     <div className="heatmap-container">
-      <h3 className="heatmap-title">{year} Consistency</h3>
-      
       {loading ? (
         <div className="heatmap-loading">Loading stats...</div>
       ) : (
-        <div className="heatmap-scroll-wrapper">
-          <div className="heatmap-grid">
-            {emptyDays.map((i) => (
-              <div key={`empty-${i}`} className="heatmap-cell empty" />
-            ))}
-            
-            {days.map(({ dateStr, monthKey }) => {
-              // Override with live data if it's the current active month on the dashboard
-              let count = 0;
-              let total = 0;
-
-              if (monthKey === currentMonthKey) {
-                // Count how many keys in the live Set end with this dateStr
-                let liveCount = 0;
-                liveCompletions.forEach((key) => {
-                  if (key.endsWith(dateStr)) liveCount++;
-                });
-                count = liveCount;
-                total = liveTotalHabits;
-              } else {
-                count = stats[dateStr]?.count || 0;
-                total = stats[dateStr]?.total || totalsByMonth[monthKey] || 1; 
-              }
-
-              const intensity = getIntensity(count, total);
-              const percent = total > 0 ? Math.round((count / total) * 100) : 0;
-              
-              return (
-                <div
-                  key={dateStr}
-                  className={`heatmap-cell intensity-${intensity}`}
-                  title={`${dateStr}: ${count}/${total} habits (${percent}%)`}
-                />
-              );
-            })}
-          </div>
+        <div className="heatmap-grid">
+          {emptyDays.map((i) => (
+            <div key={`empty-${i}`} className="heatmap-cell empty" />
+          ))}
           
-          <div className="heatmap-legend">
-            <span>Less</span>
-            <div className="heatmap-cell intensity-0" />
-            <div className="heatmap-cell intensity-1" />
-            <div className="heatmap-cell intensity-2" />
-            <div className="heatmap-cell intensity-3" />
-            <div className="heatmap-cell intensity-4" />
-            <span>More</span>
-          </div>
+          {days.map(({ dateStr, monthKey }) => {
+            // Override with live data if it's the current active month on the dashboard
+            let count = 0;
+            let total = 0;
+
+            if (monthKey === currentMonthKey) {
+              // Count how many keys in the live Set end with this dateStr
+              let liveCount = 0;
+              liveCompletions.forEach((key) => {
+                if (key.endsWith(dateStr)) liveCount++;
+              });
+              count = liveCount;
+              total = liveTotalHabits;
+            } else {
+              count = stats[dateStr]?.count || 0;
+              total = stats[dateStr]?.total || totalsByMonth[monthKey] || 1; 
+            }
+
+            const intensity = getIntensity(count, total);
+            const percent = total > 0 ? Math.round((count / total) * 100) : 0;
+            
+            return (
+              <div
+                key={dateStr}
+                className={`heatmap-cell intensity-${intensity}`}
+                title={`${dateStr}: ${count}/${total} habits (${percent}%)`}
+              />
+            );
+          })}
         </div>
       )}
     </div>
