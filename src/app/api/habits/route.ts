@@ -80,7 +80,7 @@ export async function POST(req: Request) {
 
   const [habit] = await sql`
     INSERT INTO habits (name, position, description, goal_value, month)
-    VALUES (${name.trim()}, ${position}, '', null, ${month})
+    VALUES (${name.trim().toUpperCase()}, ${position}, '', null, ${month})
     RETURNING id, name, position, description, goal_value, month
   `;
   return NextResponse.json(habit, { status: 201 });

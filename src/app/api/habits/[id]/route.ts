@@ -28,7 +28,7 @@ export async function PATCH(
   const hasDescription = body.description !== undefined;
   const hasGoalValue = body.goal_value !== undefined;
 
-  const name = hasName ? (body.name?.trim() || null) : null;
+  const name = hasName ? (body.name?.trim().toUpperCase() || null) : null;
   const description = hasDescription ? (body.description !== null ? String(body.description).trim() : "") : null;
   const goal_value = hasGoalValue ? (body.goal_value === "" || body.goal_value === null || Number(body.goal_value) === 0 ? null : Number(body.goal_value)) : null;
 

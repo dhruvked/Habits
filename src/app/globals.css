@@ -522,6 +522,7 @@ h1, h2, h3 {
     font-family: var(--font-sans);
     font-size: 0.95rem;
     font-weight: 400;
+    text-transform: uppercase;
     color: var(--ink);
     transition: opacity 0.2s, text-decoration 0.2s;
   }

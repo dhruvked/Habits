@@ -616,25 +616,8 @@ export default function HabitTracker() {
                       onClick={() => toggleMobileDay(habit.id, mobileYMD)}
                       aria-label={`${habit.name}: ${completed ? "completed" : "incomplete"}`}
                       aria-pressed={completed}
-                      style={{ position: 'relative' }}
                     >
                       <span className="mobile-habit-name">{habit.name}</span>
-                      <motion.div
-                        initial={false}
-                        animate={{ scaleX: completed ? 1 : 0 }}
-                        transition={{ duration: 0.25, ease: "easeOut" }}
-                        style={{
-                          position: 'absolute',
-                          top: '50%',
-                          left: '1.25rem',
-                          right: '1.25rem',
-                          height: '2px',
-                          background: 'currentColor',
-                          transformOrigin: 'left center',
-                          pointerEvents: 'none',
-                          opacity: 0.5
-                        }}
-                      />
                     </button>
                   );
                 })}
