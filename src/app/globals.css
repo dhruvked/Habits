@@ -124,25 +124,24 @@ h1, h2, h3 {
 }
 .nav-btn:hover { opacity: 0.45; }
 
-/* ─── Dark mode toggle ───────────────────────────────── */
+/* ─── Settings toggle (Dark mode / Clone) ──────────────── */
 .theme-btn {
   background: none;
-  border: 1.5px solid var(--border);
+  border: none;
   cursor: pointer;
-  color: var(--ink);
-  font-size: 0.85rem;
+  color: var(--muted);
+  font-size: 1.2rem;
   width: 34px;
   height: 34px;
   border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
-  transition: border-color 0.2s, background 0.2s;
-  flex-shrink: 0;
+  transition: color 0.3s ease, transform 0.4s ease;
 }
 .theme-btn:hover {
-  background: var(--surface);
-  border-color: var(--ink);
+  color: var(--ink);
+  transform: rotate(90deg);
 }
 
 .tracker {
@@ -219,10 +218,38 @@ h1, h2, h3 {
   padding-left: 0.5rem !important;
 }
 
-.tracker-table thead th.today-header {
+.tracker-table thead th
+.today-header {
   color: var(--ink);
   font-weight: 600;
 }
+
+.today-pill {
+  background: var(--surface);
+  color: var(--ink);
+  border: 1.5px solid var(--border);
+  border-radius: 12px;
+  padding: 4px 6px;
+  display: inline-block;
+}
+
+.today-cell {
+  background: var(--surface-hover);
+}
+
+.progress-pill {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 4px 10px;
+  border-radius: 20px;
+  background: var(--surface-hover);
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--text-muted);
+}
+
+
 
 /* Habit rows */
 .tracker-table tbody tr {
@@ -248,8 +275,10 @@ h1, h2, h3 {
 }
 
 .habit-name-text {
-  font-size: 0.88rem;
-  font-weight: 400;
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
   cursor: pointer;
   display: block;
   white-space: nowrap;
@@ -304,7 +333,6 @@ h1, h2, h3 {
   border-radius: 50%;
   border: 1.5px solid var(--dot-border);
   background: var(--dot-empty);
-  transition: all 0.18s cubic-bezier(0.34, 1.56, 0.64, 1);
   vertical-align: middle;
 }
 
@@ -316,7 +344,6 @@ h1, h2, h3 {
 .day-cell-btn.completed .day-dot {
   background: var(--ink);
   border-color: var(--ink);
-  transform: scale(1.1);
 }
 
 .day-cell-btn.today-cell .day-dot {
@@ -349,8 +376,10 @@ h1, h2, h3 {
 
 .ghost-habit-input {
   font-family: var(--font-sans);
-  font-size: 0.88rem;
-  font-weight: 400;
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
   background: none;
   border: none;
   outline: none;
@@ -364,7 +393,10 @@ h1, h2, h3 {
 
 .ghost-habit-input::placeholder {
   color: var(--muted);
+  text-transform: lowercase;
   font-style: italic;
+  font-weight: 500;
+  letter-spacing: normal;
 }
 
 .ghost-habit-input:focus {
@@ -946,5 +978,112 @@ h1, h2, h3 {
 
 .confirm-delete-btn:hover:not(:disabled) {
   background: #be123c;
+}
+
+/* ─── Month Nav Dropdown ────────────────────────────── */
+.month-dropdown-container {
+  position: relative;
+  display: inline-block;
+}
+
+.month-nav {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 100px;
+  padding: 0.25rem 0.5rem;
+  cursor: pointer;
+  transition: background 0.2s ease, border-color 0.2s ease;
+}
+
+.month-nav:hover {
+  background: var(--surface-hover);
+  border-color: var(--muted);
+}
+
+.month-nav-label {
+  color: var(--ink);
+  font-family: var(--font-serif);
+  font-size: 1.05rem;
+  min-width: 110px;
+  text-align: center;
+  pointer-events: none; /* Let the parent card handle clicks */
+}
+
+.dropdown-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 99;
+}
+
+.month-dropdown-popover {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  margin-top: 0.5rem;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 0.75rem;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+  z-index: 100;
+  animation: scaleUp 0.15s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  transform-origin: top center;
+}
+
+.dropdown-year-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 0.75rem;
+  font-family: var(--font-serif);
+  font-size: 1rem;
+  color: var(--ink);
+}
+
+.dropdown-year-header button {
+  background: transparent;
+  border: none;
+  color: var(--muted);
+  cursor: pointer;
+  font-size: 1.1rem;
+  padding: 0.1rem 0.3rem;
+  border-radius: 4px;
+  transition: color 0.2s, background 0.2s;
+}
+
+.dropdown-year-header button:hover {
+  color: var(--ink);
+  background: var(--surface-hover);
+}
+
+.dropdown-months-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 0.25rem;
+}
+
+.dropdown-month-btn {
+  background: transparent;
+  border: 1px solid transparent;
+  color: var(--ink);
+  padding: 0.35rem 0.1rem;
+  border-radius: 6px;
+  font-family: var(--font-sans);
+  font-size: 0.85rem;
+  cursor: pointer;
+  transition: background 0.2s, border-color 0.2s;
+}
+
+.dropdown-month-btn:hover {
+  background: var(--surface-hover);
+}
+
+.dropdown-month-btn.active {
+  background: var(--border);
+  font-weight: 500;
 }
 

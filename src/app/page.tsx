@@ -1,7 +1,8 @@
 "use client";
 
-import { useEffect, useState, useCallback, useRef } from "react";
+import React, { useState, useEffect, useRef, useCallback } from "react";
 import Link from "next/link";
+import { motion, Reorder, useDragControls, AnimatePresence } from "framer-motion";
 
 /* ─── Types ───────────────────────────────────────────── */
 interface Habit {
@@ -54,6 +55,11 @@ export default function HabitTracker() {
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [isMobile, setIsMobile]     = useState(false);
   const [draggedHabitId, setDraggedHabitId] = useState<number | null>(null);
+
+  /* ── Month Dropdown State ── */
+  const [isMonthDropdownOpen, setIsMonthDropdownOpen] = useState(false);
+  const [dropdownYear, setDropdownYear] = useState(year);
+
 
   /* ── Drag-to-Scroll Refs ── */
   const trackerRef = useRef<HTMLDivElement>(null);
@@ -166,6 +172,17 @@ export default function HabitTracker() {
   };
 
 
+
+  /* ── Persist Reorder ── */
+  const saveReorder = (newHabits: Habit[]) => {
+    const ordered = newHabits.map((h, i) => ({ ...h, position: i }));
+    fetch("/api/habits/reorder", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ orders: ordered.map((h) => ({ id: h.id, position: h.position })) }),
+    }).catch(() => {});
+  };
+
   /* ── Drag & Drop Reordering (mouse-event based, not HTML5 DnD) ── */
   const handleGripMouseDown = (e: React.MouseEvent, habitId: number) => {
     e.preventDefault(); // prevent text selection during drag
@@ -261,6 +278,18 @@ export default function HabitTracker() {
     if (!name || isAddingHabitRef.current) return;
     
     isAddingHabitRef.current = true;
+    
+    const tempId = -Date.now();
+    const tempClientId = tempId.toString();
+    const optimisticHabit: Habit & { clientId?: string } = {
+      id: tempId,
+      name,
+      goal_value: undefined,
+      position: habits.length,
+      clientId: tempClientId
+    };
+
+    setHabits((prev) => [...prev, optimisticHabit]);
     setNewHabitName(""); // Optimistic clear for immediate feedback
 
     try {
@@ -270,10 +299,12 @@ export default function HabitTracker() {
         body: JSON.stringify({ name, month: monthKey }),
       });
       if (res.ok) {
-        const habit = await res.json();
-        setHabits((prev) => [...prev, habit]);
+        const realHabit = await res.json();
+        realHabit.clientId = tempClientId;
+        setHabits((prev) => prev.map(h => (h.id === tempId ? realHabit : h)));
       } else {
-        setNewHabitName(name); // Restore on error
+        setHabits((prev) => prev.filter(h => h.id !== tempId));
+        setNewHabitName(name); 
       }
     } finally {
       isAddingHabitRef.current = false;
@@ -362,11 +393,63 @@ export default function HabitTracker() {
             <div className="header-controls">
               {/* Month nav — desktop only */}
               {!isMobile && (
-                <nav className="month-nav" aria-label="Month navigation">
-                  <button className="nav-btn" onClick={prevMonth} aria-label="Previous month">←</button>
-                  <span className="month-nav-label">{MONTH_NAMES[month]} {year}</span>
-                  <button className="nav-btn" onClick={nextMonth} aria-label="Next month">→</button>
-                </nav>
+                <div className="month-dropdown-container">
+                  <nav 
+                    className="month-nav" 
+                    aria-label="Month navigation"
+                    onClick={() => {
+                      setDropdownYear(year);
+                      setIsMonthDropdownOpen(!isMonthDropdownOpen);
+                    }}
+                  >
+                    <button 
+                      className="nav-btn" 
+                      onClick={(e) => { e.stopPropagation(); prevMonth(); }} 
+                      aria-label="Previous month"
+                    >
+                      ←
+                    </button>
+                    <span className="month-nav-label">
+                      {MONTH_NAMES[month]} {year}
+                    </span>
+                    <button 
+                      className="nav-btn" 
+                      onClick={(e) => { e.stopPropagation(); nextMonth(); }} 
+                      aria-label="Next month"
+                    >
+                      →
+                    </button>
+                  </nav>
+
+                  {isMonthDropdownOpen && (
+                    <>
+                      <div className="dropdown-overlay" onClick={() => setIsMonthDropdownOpen(false)} />
+                      <div className="month-dropdown-popover" onClick={(e) => e.stopPropagation()}>
+                        <div className="dropdown-year-header">
+                          <button onClick={() => setDropdownYear(y => y - 1)}>←</button>
+                          <span>{dropdownYear}</span>
+                          <button onClick={() => setDropdownYear(y => y + 1)}>→</button>
+                        </div>
+                        <div className="dropdown-months-grid">
+                          {MONTH_NAMES.map((mName, i) => (
+                            <button
+                              key={i}
+                              className={`dropdown-month-btn ${i === month && dropdownYear === year ? "active" : ""}`}
+                              onClick={() => {
+                                setYear(dropdownYear);
+                                setMonth(i);
+                                setMobileYMD(toYMD(dropdownYear, i, 1));
+                                setIsMonthDropdownOpen(false);
+                              }}
+                            >
+                              {mName.slice(0, 3)}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                    </>
+                  )}
+                </div>
               )}
 
               {/* Settings toggle */}
@@ -415,11 +498,13 @@ export default function HabitTracker() {
                           ].join(" ")}
                           title={`${MONTH_NAMES[month]} ${day}`}
                         >
-                          {day}
-                          <br />
-                          <span style={{ fontSize: "0.52rem", opacity: 0.65 }}>
-                            {dayLabel(year, month, day)}
-                          </span>
+                          <div className={isToday ? "today-pill" : ""}>
+                            {day}
+                            <br />
+                            <span style={{ fontSize: "0.52rem", opacity: isToday ? 0.9 : 0.65 }}>
+                              {dayLabel(year, month, day)}
+                            </span>
+                          </div>
                         </th>
                       );
                     })}
@@ -427,88 +512,31 @@ export default function HabitTracker() {
                   </tr>
                 </thead>
 
-                <tbody>
-                  {habits.map((habit) => {
-                    const habitDone = Array.from({ length: days }, (_, i) =>
-                      completions.has(`${habit.id}:${toYMD(year, month, i + 1)}`)
-                    ).filter(Boolean).length;
-
-                    return (
-                      <tr
-                        key={habit.id}
-                        data-habit-id={habit.id}
-                        className={draggedHabitId === habit.id ? "dragging" : ""}
-                      >
-                        {/* Habit name — sticky link */}
-                        <td className="habit-name-cell col-habit">
-                          <div style={{ display: "flex", alignItems: "center", gap: "0.25rem" }}>
-                            <span
-                              className="drag-handle"
-                              onMouseDown={(e) => handleGripMouseDown(e, habit.id)}
-                              title="Drag to reorder"
-                            >
-                              ⋮⋮
-                            </span>
-                            <Link
-                              href={`/habit/${habit.id}`}
-                              className="habit-name-text"
-                              title={`Click to view details: ${habit.name}`}
-                            >
-                              {habit.name}
-                            </Link>
-                          </div>
-                        </td>
-
-                        {/* Day cells */}
-                        {Array.from({ length: days }, (_, i) => {
-                          const day      = i + 1;
-                          const ymd      = toYMD(year, month, day);
-                          const done     = completions.has(`${habit.id}:${ymd}`);
-                          const isFuture = ymd > todayYMD;
-                          const isToday  = ymd === todayYMD;
-
-                          return (
-                            <td
-                              key={day}
-                              className={[
-                                "day-cell",
-                                isWeekEnd(day) ? "week-separator" : "",
-                              ].join(" ")}
-                            >
-                              <button
-                                className={[
-                                  "day-cell-btn",
-                                  done      ? "completed"   : "",
-                                  isFuture  ? "future-cell" : "",
-                                  isToday   ? "today-cell"  : "",
-                                ].join(" ")}
-                                onClick={() => !isFuture && toggleDay(habit.id, day)}
-                                aria-label={`${habit.name} — ${MONTH_NAMES[month]} ${day}: ${done ? "done" : "not done"}`}
-                                aria-pressed={done}
-                              >
-                                <span className="day-dot" />
-                              </button>
-                            </td>
-                          );
-                        })}
-
-                        {/* Progress — sticky */}
-                        <td className="progress-cell col-progress">
-                          {habit.goal_value && habit.goal_value > 0 ? (
-                            <span className={habitDone >= habit.goal_value ? "goal-achieved" : ""}>
-                              {habitDone}/{habit.goal_value}
-                            </span>
-                          ) : (
-                            <span>{habitDone}/{days}</span>
-                          )}
-                        </td>
-                      </tr>
-                    );
-                  })}
+                <Reorder.Group 
+                  as="tbody" 
+                  values={habits} 
+                  onReorder={setHabits}
+                >
+                  <AnimatePresence initial={false}>
+                    {habits.map((habit: any) => (
+                      <HabitRow
+                        key={habit.clientId || habit.id}
+                        habit={habit}
+                        days={days}
+                        year={year}
+                        month={month}
+                        todayYMD={todayYMD}
+                        completions={completions}
+                        toggleDay={toggleDay}
+                        isWeekEnd={isWeekEnd}
+                        onDragEnd={() => saveReorder(habits)}
+                      />
+                    ))}
+                  </AnimatePresence>
 
                   {/* Add habit — ghost row */}
-                  <tr className="ghost-habit-row">
-                    <td className="habit-name-cell col-habit">
+                  <motion.tr layout className="ghost-habit-row">
+                    <td className="habit-name-cell col-habit" style={{ paddingLeft: "1.5rem" }}>
                       <input
                         className="ghost-habit-input"
                         placeholder="+ add a habit…"
@@ -518,6 +546,7 @@ export default function HabitTracker() {
                         onKeyDown={(e) => {
                           if (e.key === "Enter") {
                             submitAddHabit();
+                            e.currentTarget.blur();
                           }
                           if (e.key === "Escape") {
                             setNewHabitName("");
@@ -526,12 +555,9 @@ export default function HabitTracker() {
                         }}
                       />
                     </td>
-                    {Array.from({ length: days }).map((_, i) => (
-                      <td key={i} />
-                    ))}
-                    <td className="col-progress" />
-                  </tr>
-                </tbody>
+                    <td colSpan={days + 1} />
+                  </motion.tr>
+                </Reorder.Group>
               </table>
             </div>
           ) : (
@@ -570,6 +596,7 @@ export default function HabitTracker() {
                     onKeyDown={(e) => {
                       if (e.key === "Enter") {
                         submitAddHabit();
+                        e.currentTarget.blur();
                       }
                       if (e.key === "Escape") {
                         setNewHabitName("");
@@ -627,5 +654,139 @@ export default function HabitTracker() {
         </div>
       )}
     </div>
+  );
+}
+
+/* ── Habit Row Component ── */
+interface HabitRowProps {
+  habit: Habit;
+  days: number;
+  year: number;
+  month: number;
+  todayYMD: string;
+  completions: Set<string>;
+  toggleDay: (habitId: number, day: number) => void;
+  isWeekEnd: (day: number, y?: number, m?: number) => boolean;
+  onDragEnd: () => void;
+}
+
+function HabitRow({
+  habit,
+  days,
+  year,
+  month,
+  todayYMD,
+  completions,
+  toggleDay,
+  isWeekEnd,
+  onDragEnd
+}: HabitRowProps) {
+  const controls = useDragControls();
+  const [isDragging, setIsDragging] = React.useState(false);
+
+  const habitDone = Array.from({ length: days }, (_, i) =>
+    completions.has(`${habit.id}:${toYMD(year, month, i + 1)}`)
+  ).filter(Boolean).length;
+
+  const goal = habit.goal_value || days;
+
+  return (
+    <Reorder.Item
+      as="tr"
+      value={habit}
+      id={((habit as any).clientId || habit.id).toString()}
+      initial={{ opacity: 0, y: -15, scaleY: 0.9 }}
+      animate={{ opacity: 1, y: 0, scaleY: 1 }}
+      exit={{ opacity: 0, scaleY: 0.5, backgroundColor: "var(--delete-red, #ff000020)" }}
+      transition={{ type: "spring", stiffness: 350, damping: 25 }}
+      dragListener={false}
+      dragControls={controls}
+      onDragStart={() => {
+        setIsDragging(true);
+        document.body.style.cursor = "grabbing";
+      }}
+      onDragEnd={() => {
+        setIsDragging(false);
+        document.body.style.cursor = "";
+        onDragEnd();
+      }}
+      className={isDragging ? "dragging" : ""}
+    >
+      <td 
+        className="habit-name-cell col-habit"
+        onPointerDown={(e) => controls.start(e)}
+        style={{ cursor: isDragging ? "grabbing" : "grab" }}
+      >
+        <div style={{ display: "flex", alignItems: "center", gap: "0.25rem" }}>
+          <span className="drag-handle" title="Drag to reorder">
+            ⋮⋮
+          </span>
+          <Link
+            href={`/habit/${habit.id}`}
+            className="habit-name-text"
+            title={`Click to view details: ${habit.name}`}
+            onClick={(e) => {
+              if (isDragging) e.preventDefault();
+            }}
+          >
+            {habit.name}
+          </Link>
+        </div>
+      </td>
+
+      {Array.from({ length: days }, (_, i) => {
+        const day      = i + 1;
+        const ymd      = toYMD(year, month, day);
+        const done     = completions.has(`${habit.id}:${ymd}`);
+        const isFuture = ymd > todayYMD;
+        const isToday  = ymd === todayYMD;
+
+        return (
+          <td
+            key={day}
+            className={["day-cell", isWeekEnd(day, year, month) ? "week-separator" : ""].join(" ")}
+          >
+            <motion.button
+              disabled={habit.id < 0}
+              className={[
+                "day-cell-btn",
+                done      ? "completed"   : "",
+                isFuture  ? "future-cell" : "",
+                isToday   ? "today-cell"  : "",
+              ].join(" ")}
+              onClick={() => !isFuture && toggleDay(habit.id, day)}
+              aria-label={`${habit.name} — ${day}: ${done ? "done" : "not done"}`}
+              aria-pressed={done}
+              whileTap={!isFuture && habit.id >= 0 ? { scale: 0.4 } : undefined}
+              animate={{
+                scale: done ? [1.15, 1] : 1
+              }}
+              transition={{ type: "spring", stiffness: 400, damping: 12 }}
+            >
+              <motion.span 
+                className="day-dot" 
+                initial={false}
+                animate={{
+                  scale: done ? [2.5, 1.25] : [0.3, 1]
+                }}
+                transition={{ type: "spring", stiffness: 300, damping: 10, mass: 0.8 }}
+              />
+            </motion.button>
+          </td>
+        );
+      })}
+
+      <td className="progress-cell col-progress">
+        <div className="progress-pill">
+          {habit.goal_value && habit.goal_value > 0 ? (
+            <span className={habitDone >= habit.goal_value ? "goal-achieved" : ""}>
+              {habitDone}/{habit.goal_value}
+            </span>
+          ) : (
+            <span>{habitDone}/{days}</span>
+          )}
+        </div>
+      </td>
+    </Reorder.Item>
   );
 }

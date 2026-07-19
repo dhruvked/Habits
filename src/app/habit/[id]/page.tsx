@@ -28,9 +28,7 @@ export default function HabitDetailPage({
   const [showDeleteModal, setShowDeleteModal] = useState(false);
 
   useEffect(() => {
-    // Apply DB migrations first
-    fetch("/api/init-db")
-      .then(() => fetch(`/api/habits/${id}`))
+    fetch(`/api/habits/${id}`)
       .then((res) => {
         if (!res.ok) throw new Error("Habit not found");
         return res.json();
