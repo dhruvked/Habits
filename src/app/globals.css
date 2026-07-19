@@ -1220,3 +1220,65 @@ h1, h2, h3 {
 .intensity-2 { background: color-mix(in srgb, var(--ink) 50%, transparent); }
 .intensity-3 { background: color-mix(in srgb, var(--ink) 75%, transparent); }
 .intensity-4 { background: var(--ink); }
+
+/* ─── Monthly Score ──────────────────────────────────── */
+.monthly-score {
+  font-family: var(--font-sans);
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--muted);
+  background: var(--surface-hover);
+  padding: 4px 10px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.header-actions {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+/* ─── Perfect Day Dot ────────────────────────────────── */
+.perfect-day-dot {
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  background-color: var(--ink);
+  margin: 2px auto 0;
+  box-shadow: 0 0 4px var(--ink);
+}
+
+/* ─── 7-Day Sparkline ────────────────────────────────── */
+.heatmap-layout {
+  display: flex;
+  align-items: flex-end;
+  gap: 2rem;
+  width: 100%;
+}
+
+.sparkline-container {
+  display: flex;
+  align-items: flex-end;
+  gap: 3px;
+  height: 28px;
+  padding-left: 1.5rem;
+  border-left: 1px solid var(--border);
+  margin-bottom: 2px;
+}
+
+.sparkline-bar {
+  width: 6px;
+  background-color: var(--ink);
+  border-radius: 2px;
+  opacity: 0.8;
+  transition: height 0.2s ease;
+}
+
+.sparkline-bar.empty {
+  background-color: var(--surface-hover);
+  height: 4px !important;
+  opacity: 1;
+}

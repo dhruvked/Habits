@@ -383,6 +383,23 @@ export default function HabitTracker() {
     trackerRef.current.scrollLeft = scrollLeftTracker.current - walk;
   };
 
+  const isPerfectDay = (day: number) => {
+    if (habits.length === 0) return false;
+    const dateStr = `${year}-${String(month + 1).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
+    return habits.every((h) => completions.has(`${h.id}:${dateStr}`));
+  };
+
+  // Monthly Score
+  let passedDays = days;
+  const now = new Date();
+  if (now.getFullYear() === year && now.getMonth() === month) {
+    passedDays = now.getDate();
+  } else if (new Date(year, month) > now) {
+    passedDays = 0;
+  }
+  const totalPossible = habits.length * passedDays;
+  const monthlyScore = totalPossible > 0 ? Math.round((completions.size / totalPossible) * 100) : 0;
+
   return (
     <div>
       {/* ── Header ── */}
@@ -453,16 +470,23 @@ export default function HabitTracker() {
                 </div>
               )}
 
-              {/* Settings toggle */}
-              <button
-                className="theme-btn"
-                onClick={() => setIsSettingsOpen(true)}
-                aria-label="Open settings"
-                title="Settings"
-                id="settings-btn"
-              >
-                ⚙︎
-              </button>
+              <div className="header-actions">
+                {/* Global Monthly Score */}
+                <div className="monthly-score" title="Consistency Score (Month to Date)">
+                  {monthlyScore}%
+                </div>
+
+                {/* Settings toggle */}
+                <button
+                  className="theme-btn"
+                  onClick={() => setIsSettingsOpen(true)}
+                  aria-label="Open settings"
+                  title="Settings"
+                  id="settings-btn"
+                >
+                  ⚙︎
+                </button>
+              </div>
             </div>
           </div>
         </div>
@@ -505,6 +529,9 @@ export default function HabitTracker() {
                             <span style={{ fontSize: "0.52rem", opacity: isToday ? 0.9 : 0.65 }}>
                               {dayLabel(year, month, day)}
                             </span>
+                            {isPerfectDay(day) && (
+                              <div className="perfect-day-dot" />
+                            )}
                           </div>
                         </th>
                       );

@@ -77,10 +77,11 @@ export default function YearlyHeatmap({ liveCompletions = new Set(), liveTotalHa
       {loading ? (
         <div className="heatmap-loading">Loading stats...</div>
       ) : (
-        <div className="heatmap-grid">
-          {emptyDays.map((i) => (
-            <div key={`empty-${i}`} className="heatmap-cell empty" />
-          ))}
+        <div className="heatmap-layout">
+          <div className="heatmap-grid">
+            {emptyDays.map((i) => (
+              <div key={`empty-${i}`} className="heatmap-cell empty" />
+            ))}
           
           {days.map(({ dateStr, monthKey }) => {
             // Override with live data if it's the current active month on the dashboard
@@ -111,6 +112,43 @@ export default function YearlyHeatmap({ liveCompletions = new Set(), liveTotalHa
               />
             );
           })}
+          </div>
+          
+          {/* Sparkline */}
+          <div className="sparkline-container" title="Last 7 Days Momentum">
+            {Array.from({ length: 7 }).map((_, i) => {
+              const d = new Date();
+              d.setDate(d.getDate() - (6 - i));
+              const sy = d.getFullYear();
+              const sm = String(d.getMonth() + 1).padStart(2, '0');
+              const sd = String(d.getDate()).padStart(2, '0');
+              const sDateStr = `${sy}-${sm}-${sd}`;
+              
+              let sCount = 0;
+              let sTotal = 0;
+              if (`${sy}-${sm}` === currentMonthKey) {
+                let liveCount = 0;
+                liveCompletions.forEach((key) => {
+                  if (key.endsWith(sDateStr)) liveCount++;
+                });
+                sCount = liveCount;
+                sTotal = liveTotalHabits;
+              } else {
+                sCount = stats[sDateStr]?.count || 0;
+                sTotal = stats[sDateStr]?.total || totalsByMonth[`${sy}-${sm}`] || 1;
+              }
+              
+              const pct = sTotal > 0 ? (sCount / sTotal) * 100 : 0;
+              return (
+                <div
+                  key={`spark-${i}`}
+                  className={`sparkline-bar ${sCount === 0 ? 'empty' : ''}`}
+                  style={{ height: `${Math.max(15, pct)}%` }}
+                  title={`${sDateStr}: ${sCount}/${sTotal}`}
+                />
+              );
+            })}
+          </div>
         </div>
       )}
     </div>
