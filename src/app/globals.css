@@ -154,23 +154,21 @@ h1, h2, h3 {
 }
 
 .tracker::-webkit-scrollbar {
-  height: 4px;
-  background: transparent;
+  display: none; /* Chrome/Safari */
 }
 
-.tracker::-webkit-scrollbar-thumb {
-  background: transparent;
-  border-radius: 2px;
-  transition: background 0.2s;
+/* Grab cursors for drag-to-scroll */
+.tracker {
+  cursor: grab;
 }
 
-/* Reveal thin scrollbar on hover */
-.tracker:hover {
-  scrollbar-width: thin; /* Firefox */
+.tracker:active,
+.tracker.tracker-grabbing {
+  cursor: grabbing;
 }
-
-.tracker:hover::-webkit-scrollbar-thumb {
-  background: var(--border); /* Chrome/Safari/Webkit */
+.tracker.tracker-grabbing * {
+  cursor: grabbing !important;
+  user-select: none;
 }
 
 .tracker-table {

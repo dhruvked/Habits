@@ -55,6 +55,12 @@ export default function HabitTracker() {
   const [isMobile, setIsMobile]     = useState(false);
   const [draggedHabitId, setDraggedHabitId] = useState<number | null>(null);
 
+  /* ── Drag-to-Scroll Refs ── */
+  const trackerRef = useRef<HTMLDivElement>(null);
+  const isDraggingTracker = useRef(false);
+  const startX = useRef(0);
+  const scrollLeftTracker = useRef(0);
+
   /* ── Viewport dynamic check ── */
   useEffect(() => {
     const media = window.matchMedia("(max-width: 768px)");
@@ -300,6 +306,37 @@ export default function HabitTracker() {
   const isWeekEnd = (day: number) =>
     new Date(year, month, day).getDay() === 0;
 
+  /* ── Drag-to-Scroll Handlers ── */
+  const onTrackerMouseDown = (e: React.MouseEvent) => {
+    if (!trackerRef.current) return;
+    isDraggingTracker.current = true;
+    trackerRef.current.classList.add("tracker-grabbing");
+    startX.current = e.pageX - trackerRef.current.offsetLeft;
+    scrollLeftTracker.current = trackerRef.current.scrollLeft;
+  };
+
+  const onTrackerMouseLeave = () => {
+    isDraggingTracker.current = false;
+    if (trackerRef.current) {
+      trackerRef.current.classList.remove("tracker-grabbing");
+    }
+  };
+
+  const onTrackerMouseUp = () => {
+    isDraggingTracker.current = false;
+    if (trackerRef.current) {
+      trackerRef.current.classList.remove("tracker-grabbing");
+    }
+  };
+
+  const onTrackerMouseMove = (e: React.MouseEvent) => {
+    if (!isDraggingTracker.current || !trackerRef.current) return;
+    e.preventDefault();
+    const x = e.pageX - trackerRef.current.offsetLeft;
+    const walk = (x - startX.current) * 1.5; // scrolling speed multiplier
+    trackerRef.current.scrollLeft = scrollLeftTracker.current - walk;
+  };
+
   return (
     <div>
       {/* ── Header ── */}
@@ -338,7 +375,14 @@ export default function HabitTracker() {
         {loading ? (
           <div className="loading-state">loading your habits…</div>
         ) : !isMobile ? (
-          <div className="tracker">
+          <div 
+            className="tracker"
+            ref={trackerRef}
+            onMouseDown={onTrackerMouseDown}
+            onMouseLeave={onTrackerMouseLeave}
+            onMouseUp={onTrackerMouseUp}
+            onMouseMove={onTrackerMouseMove}
+          >
               <table className="tracker-table" aria-label="Habit tracker">
                 <thead>
                   <tr>
