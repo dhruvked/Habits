@@ -1,15 +1,22 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
-import { motion } from "framer-motion";
 
-interface YearlyStat {
-  date_str: string;
-  count: string;
+interface YearlyHeatmapProps {
+  liveCompletions?: Set<string>;
+  liveTotalHabits?: number;
+  currentMonthKey?: string;
 }
 
-export default function YearlyHeatmap() {
-  const [stats, setStats] = useState<Record<string, number>>({});
+interface CompletionData {
+  date_str: string;
+  count: number;
+  total: number;
+}
+
+export default function YearlyHeatmap({ liveCompletions = new Set(), liveTotalHabits = 0, currentMonthKey = "" }: YearlyHeatmapProps) {
+  const [stats, setStats] = useState<Record<string, { count: number; total: number }>>({});
+  const [totalsByMonth, setTotalsByMonth] = useState<Record<string, number>>({});
   const [loading, setLoading] = useState(true);
 
   const year = new Date().getFullYear();
@@ -17,14 +24,17 @@ export default function YearlyHeatmap() {
   useEffect(() => {
     fetch(`/api/stats/yearly?year=${year}`)
       .then((res) => res.json())
-      .then((data: YearlyStat[]) => {
-        const map: Record<string, number> = {};
-        if (Array.isArray(data)) {
-          data.forEach((d) => {
-            map[d.date_str] = parseInt(d.count, 10);
+      .then((data: { completions: CompletionData[]; totalsByMonth: Record<string, number> }) => {
+        const map: Record<string, { count: number; total: number }> = {};
+        if (data && Array.isArray(data.completions)) {
+          data.completions.forEach((d) => {
+            map[d.date_str] = { count: d.count, total: d.total };
           });
         }
         setStats(map);
+        if (data && data.totalsByMonth) {
+          setTotalsByMonth(data.totalsByMonth);
+        }
       })
       .catch(console.error)
       .finally(() => setLoading(false));
@@ -34,7 +44,7 @@ export default function YearlyHeatmap() {
   const startDate = new Date(year, 0, 1);
   const endDate = new Date(year, 11, 31);
   
-  const days: { date: Date; dateStr: string }[] = [];
+  const days: { date: Date; dateStr: string; monthKey: string }[] = [];
   let current = new Date(startDate);
   
   while (current <= endDate) {
@@ -44,6 +54,7 @@ export default function YearlyHeatmap() {
     days.push({
       date: new Date(current),
       dateStr: `${y}-${m}-${d}`,
+      monthKey: `${y}-${m}`
     });
     current.setDate(current.getDate() + 1);
   }
@@ -52,12 +63,9 @@ export default function YearlyHeatmap() {
   const firstDayOfWeek = startDate.getDay(); // 0 = Sunday
   const emptyDays = Array.from({ length: firstDayOfWeek }, (_, i) => i);
 
-  // Determine intensity based on max completions
-  const maxCompletions = Object.values(stats).reduce((a, b) => Math.max(a, b), 1);
-
-  const getIntensity = (count: number) => {
-    if (count === 0) return 0;
-    const ratio = count / maxCompletions;
+  const getIntensity = (count: number, total: number) => {
+    if (count === 0 || total === 0) return 0;
+    const ratio = count / total;
     if (ratio <= 0.25) return 1;
     if (ratio <= 0.5) return 2;
     if (ratio <= 0.75) return 3;
@@ -77,15 +85,32 @@ export default function YearlyHeatmap() {
               <div key={`empty-${i}`} className="heatmap-cell empty" />
             ))}
             
-            {days.map(({ dateStr }) => {
-              const count = stats[dateStr] || 0;
-              const intensity = getIntensity(count);
+            {days.map(({ dateStr, monthKey }) => {
+              // Override with live data if it's the current active month on the dashboard
+              let count = 0;
+              let total = 0;
+
+              if (monthKey === currentMonthKey) {
+                // Count how many keys in the live Set end with this dateStr
+                let liveCount = 0;
+                liveCompletions.forEach((key) => {
+                  if (key.endsWith(dateStr)) liveCount++;
+                });
+                count = liveCount;
+                total = liveTotalHabits;
+              } else {
+                count = stats[dateStr]?.count || 0;
+                total = stats[dateStr]?.total || totalsByMonth[monthKey] || 1; 
+              }
+
+              const intensity = getIntensity(count, total);
+              const percent = total > 0 ? Math.round((count / total) * 100) : 0;
               
               return (
                 <div
                   key={dateStr}
                   className={`heatmap-cell intensity-${intensity}`}
-                  title={`${dateStr}: ${count} habits completed`}
+                  title={`${dateStr}: ${count}/${total} habits (${percent}%)`}
                 />
               );
             })}

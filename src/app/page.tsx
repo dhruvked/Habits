@@ -611,7 +611,11 @@ export default function HabitTracker() {
           )}
           
           {/* Yearly Analytics Heatmap */}
-          <YearlyHeatmap />
+          <YearlyHeatmap 
+            liveCompletions={completions} 
+            liveTotalHabits={habits.length} 
+            currentMonthKey={monthKey} 
+          />
       </main>
 
       {/* ── Settings Modal ── */}

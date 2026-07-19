@@ -1213,7 +1213,13 @@ h1, h2, h3 {
   height: 12px;
   border-radius: 3px;
   background: var(--surface-hover);
-  transition: transform 0.1s, opacity 0.2s;
+  border: 1px solid var(--border);
+  transition: transform 0.1s, opacity 0.2s, background-color 0.2s;
+}
+
+.heatmap-cell.empty {
+  border-color: transparent;
+  background: transparent;
 }
 
 .heatmap-cell:not(.empty):hover {
