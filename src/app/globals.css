@@ -1267,6 +1267,8 @@ h1, h2, h3 {
 .analytics-content {
   padding-top: 2rem;
   padding-bottom: 6rem;
+  max-width: 800px;
+  margin: 0 auto;
 }
 
 .analytics-title {
